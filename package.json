@@ -1,8 +1,12 @@
 {
   "name": "reqstorm",
-  "version": "0.1.0",
-  "description": "API performance analyzer MCP server",
+  "version": "0.1.1",
+  "description": "API performance analyzer MCP server with 7 tools for benchmarking, load, stress, spike, soak, smoke, and A/B testing",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/looph0le/ReqStorm.git"
+  },
   "bin": {
     "reqstorm": "dist/index.js"
   },
@@ -24,11 +28,14 @@
   },
   "keywords": [
     "mcp",
+    "model-context-protocol",
     "performance",
     "load-testing",
     "api",
     "benchmark",
-    "stress-test"
+    "stress-test",
+    "soak-test",
+    "spike-test"
   ],
   "dependencies": {
     "@modelcontextprotocol/server": "^2.0.0",
