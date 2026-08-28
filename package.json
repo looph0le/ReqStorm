@@ -4,7 +4,7 @@
   "description": "API performance analyzer MCP server",
   "license": "MIT",
   "bin": {
-    "reqstorm": "./dist/index.js"
+    "reqstorm": "dist/index.js"
   },
   "exports": {
     ".": "./dist/index.js"
