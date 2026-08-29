@@ -3,6 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/reqstorm.svg)](https://www.npmjs.com/package/reqstorm)
 [![Downloads](https://img.shields.io/npm/dm/reqstorm.svg)](https://www.npmjs.com/package/reqstorm)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Listed on mcpservers.org](https://mcpservers.org/badge.svg)](https://mcpservers.org/servers/looph0le/reqstorm)
 
 API performance analyzer MCP server. Published to npm as [`reqstorm`](https://www.npmjs.com/package/reqstorm).
 
