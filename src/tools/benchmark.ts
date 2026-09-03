@@ -1,6 +1,7 @@
 import * as z from "zod/v4";
 import { runBenchmarkSplit } from "../utils/autocannon.js";
 import { formatBenchmark } from "../utils/formatters.js";
+import { saveResult } from "../utils/persistence.js";
 
 export const benchmarkSchema = z.object({
   url: z.string().describe("Target URL to benchmark"),
@@ -14,9 +15,14 @@ export const benchmarkSchema = z.object({
   duration: z.number().int().positive().default(10).describe("Test duration in seconds"),
   pipelining: z.number().int().positive().default(1).describe("HTTP pipelining factor"),
   warmUpDuration: z.number().nonnegative().default(3).describe("Warm-up period in seconds (results split into warm-up vs steady-state)"),
+  saveAs: z
+    .string()
+    .optional()
+    .describe("Save results to .reqstorm/<name>.json for future regression comparison"),
 });
 
 export async function benchmarkHandler(args: z.infer<typeof benchmarkSchema>) {
+  args = benchmarkSchema.parse(args);
   const result = await runBenchmarkSplit({
     url: args.url,
     method: args.method,
@@ -28,6 +34,18 @@ export async function benchmarkHandler(args: z.infer<typeof benchmarkSchema>) {
     warmUpDuration: args.warmUpDuration * 1000,
     title: `reqstorm-benchmark`,
   });
+
+  if (args.saveAs) {
+    const steady = result.steadyState ?? result.overall;
+    saveResult(args.saveAs, "benchmark", {
+      url: args.url,
+      method: (args.method ?? "GET").toUpperCase(),
+      latency: steady.latency,
+      throughput: steady.throughput,
+      errorRate: steady.errorRate,
+      duration: steady.duration,
+    });
+  }
 
   return {
     content: [{ type: "text" as const, text: formatBenchmark(result.overall) }],

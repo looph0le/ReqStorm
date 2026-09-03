@@ -284,7 +284,7 @@ export function formatCompare(result: CompareResult): string {
   const lines = [
     "",
     SEPARATOR,
-    `  A/B Comparison`,
+    `  A/B Comparison${result.runs && result.runs > 1 ? ` (${result.runs} runs)` : ""}`,
     SEPARATOR,
     "",
     `  Baseline: ${result.baseline.method} ${result.baseline.url}`,
@@ -299,8 +299,29 @@ export function formatCompare(result: CompareResult): string {
     `  Error Rate:       ${pad(formatPercent(result.baseline.errorRate), 14)}${pad(formatPercent(result.target.errorRate), 14)}${pad(fmt(result.deltas.errorRate), 12)}`,
     "",
     `  Verdict: ${result.verdict}`,
-    "",
   ];
 
+  if (
+    result.runs &&
+    result.runs > 1 &&
+    result.meanP95Baseline !== undefined &&
+    result.meanP95Target !== undefined
+  ) {
+    lines.push("");
+    lines.push("  Statistical Confidence:");
+    lines.push(
+      `    Baseline p95: ${formatMs(result.meanP95Baseline)}${result.sdP95Baseline ? ` ± ${formatMs(result.sdP95Baseline)}` : ""}`
+    );
+    lines.push(
+      `    Target p95:   ${formatMs(result.meanP95Target)}${result.sdP95Target ? ` ± ${formatMs(result.sdP95Target)}` : ""}`
+    );
+    if (result.confidence !== null && result.confidence !== undefined && result.confidence > 50) {
+      lines.push(`    Confidence:   ${result.confidence}%`);
+    } else if (result.confidence !== null && result.confidence !== undefined) {
+      lines.push(`    Confidence:   insufficient (${result.confidence}%)`);
+    }
+  }
+
+  lines.push("");
   return lines.join("\n");
 }

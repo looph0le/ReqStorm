@@ -17,18 +17,29 @@ export const spikeSchema = z.object({
   spikeDuration: z.number().int().positive().default(10).describe("Spike phase duration in seconds"),
   recoveryDuration: z.number().int().positive().default(10).describe("Recovery phase duration in seconds"),
   warmUpDuration: z.number().nonnegative().default(0).describe("Warm-up in seconds (0 to skip)"),
+  pipelining: z.number().int().positive().default(1).describe("HTTP pipelining factor"),
 });
 
 export async function spikeHandler(args: z.infer<typeof spikeSchema>) {
+  args = spikeSchema.parse(args);
   try {
+    const baselineConcurrency = args.baselineConcurrency ?? 5;
+    const spikeConcurrency = args.spikeConcurrency ?? 100;
+    const baselineDuration = args.baselineDuration ?? 10;
+    const spikeDuration = args.spikeDuration ?? 10;
+    const recoveryParameters = args.recoveryDuration ?? 10;
+    const warmUpDuration = args.warmUpDuration ?? 0;
+    const pipelining = args.pipelining ?? 1;
+
     const baseline = await runBenchmarkSplit({
       url: args.url,
       method: args.method,
       headers: args.headers,
       body: args.body,
-      connections: args.baselineConcurrency,
-      duration: args.baselineDuration,
-      warmUpDuration: args.warmUpDuration * 1000,
+      connections: baselineConcurrency,
+      duration: baselineDuration,
+      warmUpDuration: warmUpDuration * 1000,
+      pipelining,
       title: "reqstorm-spike-baseline",
     });
 
@@ -37,9 +48,10 @@ export async function spikeHandler(args: z.infer<typeof spikeSchema>) {
       method: args.method,
       headers: args.headers,
       body: args.body,
-      connections: args.spikeConcurrency,
-      duration: args.spikeDuration,
+      connections: spikeConcurrency,
+      duration: spikeDuration,
       warmUpDuration: 0,
+      pipelining,
       title: "reqstorm-spike-spike",
     });
 
@@ -48,9 +60,10 @@ export async function spikeHandler(args: z.infer<typeof spikeSchema>) {
       method: args.method,
       headers: args.headers,
       body: args.body,
-      connections: args.baselineConcurrency,
-      duration: args.recoveryDuration,
+      connections: baselineConcurrency,
+      duration: recoveryParameters,
       warmUpDuration: 0,
+      pipelining,
       title: "reqstorm-spike-recovery",
     });
 

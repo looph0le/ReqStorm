@@ -41,17 +41,22 @@ function runPhase(opts: autocannon.Options, duration: number): Promise<any> {
 export async function stressTestHandler(
   args: z.infer<typeof stressTestSchema>
 ) {
+  args = stressTestSchema.parse(args);
   const steps: StressStep[] = [];
   let breakingConcurrency: number | null = null;
   let maxThroughput = 0;
   let maxThroughputConcurrency = 0;
 
-  let concurrency = args.startConcurrency;
-  const breakP95 = args.breakThreshold.maxP95 ?? 500;
-  const breakErrorRate = args.breakThreshold.maxErrorRate ?? 10;
+  let concurrency = args.startConcurrency ?? 1;
+  const stepSize = args.stepSize ?? 5;
+  const stepDuration = args.stepDuration ?? 10;
+  const maxConcurrency = args.maxConcurrency ?? 200;
+  const breakThreshold = args.breakThreshold ?? {};
+  const breakP95 = breakThreshold.maxP95 ?? 500;
+  const breakErrorRate = breakThreshold.maxErrorRate ?? 10;
 
   try {
-    while (concurrency <= args.maxConcurrency) {
+    while (concurrency <= maxConcurrency) {
       const result = await runPhase(
         {
           url: args.url,
@@ -60,7 +65,7 @@ export async function stressTestHandler(
           body: args.body,
           connections: concurrency,
         },
-        args.stepDuration
+        stepDuration
       );
 
       const totalReqs = result.requests.total;
@@ -94,14 +99,17 @@ export async function stressTestHandler(
         breakingConcurrency = concurrency;
       }
 
-      concurrency += args.stepSize;
+      concurrency += stepSize;
     }
 
     const result: StressTestResult = {
       url: args.url,
       method: (args.method ?? "GET").toUpperCase(),
       steps,
-      breakingPoint: breakingConcurrency !== null ? steps.find(s => s.concurrency === breakingConcurrency)!.latency.p95 : null,
+      breakingPoint:
+        breakingConcurrency !== null
+          ? steps.find((s) => s.concurrency === breakingConcurrency)?.latency.p95 ?? null
+          : null,
       breakingConcurrency,
       maxThroughput,
       maxThroughputConcurrency,

@@ -1,6 +1,7 @@
 import * as z from "zod/v4";
 import autocannon from "autocannon";
 import type { SmokeResult } from "../utils/types.js";
+import { formatSmoke } from "../utils/formatters.js";
 
 export const smokeSchema = z.object({
   url: z.string().describe("Target URL to smoke test"),
@@ -24,6 +25,7 @@ export const smokeSchema = z.object({
 });
 
 export async function smokeHandler(args: z.infer<typeof smokeSchema>) {
+  args = smokeSchema.parse(args);
   const errors: string[] = [];
   let pass = true;
   let expectedStatusMet: boolean | undefined;
@@ -40,8 +42,8 @@ export async function smokeHandler(args: z.infer<typeof smokeSchema>) {
           method: (args.method ?? "GET") as any,
           headers: args.headers,
           body: args.body,
-          connections: args.connections,
-          duration: args.duration,
+          connections: args.connections ?? 3,
+          duration: args.duration ?? 5,
           verifyBody: (body: any) => {
             bodyChecks++;
             if (args.expectedBody === undefined) return true;
@@ -59,18 +61,14 @@ export async function smokeHandler(args: z.infer<typeof smokeSchema>) {
       instance.on("error", (err: Error) => reject(err));
     });
 
-    for (const code of ["1xx", "2xx", "3xx", "4xx", "5xx"] as const) {
-      if (result[code] > 0) {
-        const base = parseInt(code[0], 10) * 100;
-        observedStatus = base;
-        break;
-      }
-    }
+    const statusStats = result.statusCodeStats ?? {};
+    const statusCodes = Object.keys(statusStats)
+      .map(Number)
+      .sort((a, b) => b - a);
+    observedStatus = statusCodes[0] ?? null;
 
     if (args.expectedStatus !== undefined) {
-      expectedStatusMet =
-        observedStatus !== null &&
-        Math.floor(observedStatus / 100) === Math.floor(args.expectedStatus / 100);
+      expectedStatusMet = observedStatus === args.expectedStatus;
       if (!expectedStatusMet) {
         pass = false;
         errors.push(
@@ -114,48 +112,8 @@ export async function smokeHandler(args: z.infer<typeof smokeSchema>) {
       errors,
     };
 
-    const lines = [
-      "",
-      "══════════════════════════════════════════════════",
-      `  Smoke Test: ${args.method.toUpperCase()} ${args.url}`,
-      "══════════════════════════════════════════════════",
-      "",
-      `Status Code:     ${observedStatus ?? (result.errors > 0 ? "CONN ERROR" : "N/A")}`,
-      `Duration:        ${result.duration}s`,
-      `Total Requests:  ${result.requests.total}`,
-      "",
-      `  p50: ${latency.p50.toFixed(1)}ms | p95: ${latency.p95.toFixed(1)}ms | p99: ${latency.p99.toFixed(1)}ms`,
-      "",
-    ];
-
-    if (args.expectedStatus !== undefined) {
-      lines.push(
-        `  Status check:   ${expectedStatusMet ? "PASS" : "FAIL"}`
-      );
-    }
-    if (args.expectedBody !== undefined) {
-      lines.push(
-        `  Body check:     ${expectedBodyMet ? "PASS" : "FAIL"}`
-      );
-    }
-    if (args.expectedStatus !== undefined || args.expectedBody !== undefined) {
-      lines.push("");
-    }
-
-    lines.push(`  Result:         ${pass ? "PASS" : "FAIL"}`);
-
-    if (errors.length > 0) {
-      lines.push("");
-      lines.push("  Errors:");
-      for (const err of errors) {
-        lines.push(`    - ${err}`);
-      }
-    }
-
-    lines.push("");
-
     return {
-      content: [{ type: "text" as const, text: lines.join("\n") }],
+      content: [{ type: "text" as const, text: formatSmoke(smokeResult) }],
     };
   } catch (err: any) {
     return {

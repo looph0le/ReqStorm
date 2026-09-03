@@ -32,10 +32,6 @@ function extractLatency(result: autocannon.Result): LatencyPercentiles {
   };
 }
 
-function extractTtfb(_result: autocannon.Result): LatencyPercentiles {
-  return { p50: 0, p95: 0, p99: 0, p999: 0 };
-}
-
 function buildPhaseResult(
   label: string,
   duration: number,
@@ -54,7 +50,6 @@ function buildPhaseResult(
     errorRate,
     throughput: result.requests.average,
     latency: extractLatency(result),
-    ttfb: extractTtfb(result),
   };
 }
 
@@ -140,7 +135,6 @@ function buildBenchmarkResult(
     errorRate,
     throughput: result.requests.average,
     latency: extractLatency(result),
-    ttfb: extractTtfb(result),
     warmUp: warmUp ?? undefined,
     steadyState: steadyState ?? undefined,
   };

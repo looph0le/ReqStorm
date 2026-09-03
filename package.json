@@ -1,7 +1,7 @@
 {
   "name": "reqstorm",
-  "version": "0.1.1",
-  "description": "API performance analyzer MCP server with 7 tools for benchmarking, load, stress, spike, soak, smoke, and A/B testing",
+  "version": "0.2.0",
+  "description": "Complete API testing platform MCP server with 14 tools: performance testing (benchmark, load, stress, spike, soak, smoke, A/B compare, profile), functional validation, multi-step workflow chains, OpenAPI contract checking, fuzzing, security scanning, and regression detection",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -35,11 +35,19 @@
     "benchmark",
     "stress-test",
     "soak-test",
-    "spike-test"
+    "spike-test",
+    "validation",
+    "fuzzing",
+    "contract-testing",
+    "security",
+    "workflow",
+    "regression"
   ],
   "dependencies": {
+    "@apidevtools/swagger-parser": "^13.0.0",
     "@modelcontextprotocol/server": "^2.0.0",
     "autocannon": "^8.0.0",
+    "jsonpath-plus": "^10.4.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

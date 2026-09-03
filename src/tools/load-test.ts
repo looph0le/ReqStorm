@@ -26,6 +26,7 @@ export const loadTestSchema = z.object({
 });
 
 export async function loadTestHandler(args: z.infer<typeof loadTestSchema>) {
+  args = loadTestSchema.parse(args);
   const result = await runBenchmarkSplit({
     url: args.url,
     method: args.method,

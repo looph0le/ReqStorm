@@ -22,6 +22,7 @@ export const soakSchema = z.object({
 });
 
 export async function soakHandler(args: z.infer<typeof soakSchema>) {
+  args = soakSchema.parse(args);
   if (args.duration > args.maxDuration) {
     return {
       content: [
