@@ -5,13 +5,17 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Listed on mcpservers.org](https://mcpservers.org/badge.svg)](https://mcpservers.org/servers/looph0le/reqstorm)
 
-API testing and performance analysis MCP server. Published to npm as [`reqstorm`](https://www.npmjs.com/package/reqstorm).
+ReqStorm is an [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server for API testing, performance analysis, contract validation, fuzzing, and lightweight security checks. It runs over stdio, so it works with MCP clients such as Claude Desktop, VS Code, Cursor, and other compatible hosts.
 
-Run API tests from any MCP host (Claude Desktop, VS Code, Cursor, etc.) using **14 tools** covering performance testing, functional validation, API contract checking, security scanning, and more.
+ReqStorm is published as [`reqstorm`](https://www.npmjs.com/package/reqstorm) and provides 14 tools:
 
-## Install
+- **Performance:** benchmark, smoke, load-test, spike, soak, stress-test, compare
+- **Functional and contract:** validate, chain, contract-check, fuzz, regression
+- **Security and profiling:** security-scan, profile
 
-Add to your MCP host config:
+## Quick start
+
+Add ReqStorm to your MCP host configuration:
 
 ```json
 {
@@ -24,214 +28,258 @@ Add to your MCP host config:
 }
 ```
 
-Or install globally for direct use:
+The first run downloads the package from npm. For a globally installed binary instead:
 
 ```bash
-npm install -g reqstorm
+npm install --global reqstorm
 ```
 
-## Tools
+Then ask your MCP client to run a tool, for example:
 
-### Performance Testing
+> Run a ReqStorm benchmark against `https://api.example.com/health` with 10 connections for 10 seconds.
 
-| Tool | Description |
-|------|-------------|
-| `benchmark` | Quick endpoint benchmark. Latency percentiles (p50/p95/p99/p999), throughput (req/s), warm-up vs steady-state split. |
-| `smoke` | Fast sanity check. Validates status code and response body, basic latency stats. |
-| `load-test` | Sustained load with pass/fail thresholds (maxP95, maxP99, maxErrorRate). Thresholds evaluated on steady-state only. |
-| `spike` | Sudden traffic surge. Measures recovery time back to baseline latency after the spike. |
-| `soak` | Long-running sustained load (default 30min). Catches memory leaks and drift over time with periodic snapshots. |
-| `stress-test` | Auto-ramp from low to high concurrency. Identifies the breaking point where latency/error degrades. |
-| `compare` | A/B comparison of two endpoints with multi-run statistical confidence (mean, stddev, p-value). |
+ReqStorm needs **Node.js 18 or newer**.
 
-### Functional & Contract Testing
+## Tool reference
 
-| Tool | Description |
-|------|-------------|
-| `validate` | Send a request and assert on the response with JSONPath + 12 matcher operators (equals, contains, regex, type, gt, lt, oneOf, etc.). Supports retries. |
-| `chain` | Multi-step workflows. Each step's response can be asserted and extract variables (JSONPath) that interpolate into later steps via `{{var}}`. |
-| `contract-check` | Validate a running server against an OpenAPI 3.x spec (status codes, schema shape, content types) and detect breaking changes vs a previous spec. |
-| `fuzz` | Mutation-based robustness testing. Boundary, type-swap, injection, overflow, unicode, format, null-field, and missing-fields strategies. |
-| `regression` | Compare current performance against a saved baseline to detect p95/throughput/error-rate regressions. Baselines persist to `.reqstorm/`. |
+### Performance testing
 
-### Security Testing
+| Tool | Use it for |
+| --- | --- |
+| `benchmark` | Measure throughput and p50/p95/p99/p999 latency. Results include overall, warm-up, and steady-state data. |
+| `smoke` | Quickly check that an endpoint responds with the expected status and body. |
+| `load-test` | Run sustained traffic and evaluate steady-state `maxP95`, `maxP99`, and `maxErrorRate` thresholds. |
+| `spike` | Run baseline, sudden surge, and recovery phases; measure recovery against baseline latency. |
+| `soak` | Run long-lived traffic in periodic chunks to find memory leaks, exhaustion, and performance drift. Default duration is 30 minutes. |
+| `stress-test` | Ramp concurrency step by step until latency or error-rate thresholds identify a breaking point. |
+| `compare` | Compare two endpoints or configurations side by side, optionally repeating each target up to five times. |
 
-| Tool | Description |
-|------|-------------|
-| `security-scan` | 8 security checks: security headers, data exposure, rate limiting, IDOR, auth bypass, method override, content-type mismatch, path traversal. |
+### Functional and contract testing
 
-### Profiling
+| Tool | Use it for |
+| --- | --- |
+| `validate` | Send one request and assert on JSONPath values, types, comparisons, regexes, array properties, and response-time thresholds. |
+| `chain` | Execute up to 20 ordered requests, extract values from responses, interpolate them into later requests, and assert each step. |
+| `contract-check` | Check a running API against an OpenAPI 3.x JSON/YAML document, including status codes, schemas, content types, and required fields. |
+| `fuzz` | Mutate request bodies with boundary, type-swap, injection, overflow, missing-field, Unicode, format, and null-field strategies. |
+| `regression` | Compare steady-state performance with a saved `.reqstorm/` baseline and optionally save the current run as the new baseline. |
 
-| Tool | Description |
-|------|-------------|
-| `profile` | Deep latency profile with a histogram of percentile buckets, throughput coefficient of variation (stability), and status-code distribution. |
+### Security and profiling
 
-All tools accept `headers` for authentication (Bearer tokens, API keys, cookies).
+| Tool | Use it for |
+| --- | --- |
+| `security-scan` | Run selected checks for authentication bypass, IDOR, security headers, data exposure, rate limiting, method override, content-type mismatch, and path traversal. |
+| `profile` | Inspect latency distribution, status-code counts, throughput stability, and error/timeout breakdowns. |
 
-## Usage Examples
+## Common input conventions
 
-**Quick benchmark:**
+- `url` values must be reachable by the machine running the MCP server.
+- `headers` is a string-to-string object and can carry authentication, cookies, or API keys.
+- HTTP `body` fields are JSON strings, not JavaScript objects. Set an appropriate `Content-Type` header when sending JSON.
+- Methods that use JSONPath accept expressions such as `$.user.id`, `$.items[0]`, `$..email`, and `$.tags[*]`.
+- Outputs are returned as formatted text in the MCP tool response.
+- Performance tools use the steady-state phase for threshold evaluation; warm-up results are still reported rather than discarded.
 
-```
-benchmark:
-  url: "https://api.example.com/users"
-  connections: 50
-  duration: 30
-```
+## Examples
 
-**Functionally validate a response:**
+### Benchmark an endpoint
 
-```
-validate:
-  url: "https://api.example.com/users/1"
-  assertions:
-    - path: "$.name"
-      match: { op: "equals", expected: "Alice" }
-    - path: "$.age"
-      match: { op: "gte", expected: 18 }
-    - path: "$.email"
-      match: { op: "matches", pattern: "^[^@]+@[^@]+$" }
-```
-
-**Chain a multi-step flow with variable sharing:**
-
-```
-chain:
-  baseUrl: "https://api.example.com"
-  steps:
-    - name: login
-      request: { url: "/auth/login", method: "POST" }
-      extract: { token: "$.token" }
-    - name: create-user
-      request:
-        url: "/users"
-        method: "POST"
-        headers: { "Authorization": "Bearer {{token}}" }
-        body: "{ \"name\": \"Test User\" }"
-      extract: { id: "$.id" }
-    - name: verify
-      request: { url: "/users/{{id}}", method: "GET" }
-      assertions:
-        - path: "$.name"
-          match: { op: "equals", expected: "Test User" }
+```json
+{
+  "url": "https://api.example.com/users",
+  "connections": 50,
+  "duration": 30,
+  "warmUpDuration": 5,
+  "headers": {
+    "Authorization": "Bearer <token>"
+  }
+}
 ```
 
-**Check a live API against its OpenAPI spec:**
+### Validate a JSON response
 
-```
-contract-check:
-  specUrl: "https://api.example.com/openapi.json"
-  baseUrl: "https://api.example.com"
-```
-
-**Load test with SLO thresholds:**
-
-```
-load-test:
-  url: "https://api.example.com/auth"
-  headers: { "Authorization": "Bearer xxx" }
-  connections: 100
-  duration: 60
-  thresholds: { "maxP95": 200, "maxP99": 500, "maxErrorRate": 1 }
-```
-
-**Spike test (surge + recovery):**
-
-```
-spike:
-  url: "https://api.example.com/search"
-  baselineConcurrency: 10
-  spikeConcurrency: 200
-  baselineDuration: 30
-  spikeDuration: 15
-  recoveryDuration: 30
+```json
+{
+  "url": "https://api.example.com/users/1",
+  "assertions": [
+    {
+      "path": "$.name",
+      "match": { "op": "equals", "expected": "Alice" }
+    },
+    {
+      "path": "$.age",
+      "match": { "op": "gte", "expected": 18 }
+    },
+    {
+      "path": "$.email",
+      "match": { "op": "matches", "pattern": "^[^@]+@[^@]+$" }
+    }
+  ],
+  "timeouts": {
+    "maxResponseMs": 500
+  },
+  "retries": 2
+}
 ```
 
-**Find the breaking point:**
+Supported matcher operators are `equals`, `notEquals`, `contains`, `matches`, `gt`, `lt`, `gte`, `lte`, `exists`, `notExists`, `isType`, `isArray`, and `hasLength`.
 
-```
-stress-test:
-  url: "https://api.example.com/items"
-  startConcurrency: 5
-  stepSize: 10
-  stepDuration: 20
-  maxConcurrency: 500
-  breakThreshold: { "maxP95": 1000, "maxErrorRate": 5 }
-```
+### Chain an authenticated workflow
 
-**A/B comparison of two implementations with statistical confidence:**
-
-```
-compare:
-  baseline: { "url": "https://api-v2.example.com/users" }
-  target:   { "url": "https://api-v3.example.com/users" }
-  connections: 20
-  duration: 30
-  runs: 5
-```
-
-**Fuzz test an endpoint for robustness:**
-
-```
-fuzz:
-  url: "https://api.example.com/users"
-  method: "POST"
-  depth: "normal"
-  strategies:
-    - boundary
-    - injection
-    - type-swap
-    - missing-fields
-  body:
-    name: "Alice"
-    age: 30
-```
-
-**Security scan:**
-
-```
-security-scan:
-  url: "https://api.example.com/users/1"
-  checks:
-    - security-headers
-    - data-exposure
-    - idor
-    - path-traversal
+```json
+{
+  "baseUrl": "https://api.example.com",
+  "steps": [
+    {
+      "name": "login",
+      "request": {
+        "url": "/auth/login",
+        "method": "POST",
+        "headers": { "Content-Type": "application/json" },
+        "body": "{\"username\":\"test\",\"password\":\"<password>\"}"
+      },
+      "extract": { "token": "$.token" }
+    },
+    {
+      "name": "create-user",
+      "request": {
+        "url": "/users",
+        "method": "POST",
+        "headers": {
+          "Authorization": "Bearer {{token}}",
+          "Content-Type": "application/json"
+        },
+        "body": "{\"name\":\"Test User\"}"
+      },
+      "extract": { "id": "$.id" }
+    },
+    {
+      "name": "verify",
+      "request": {
+        "url": "/users/{{id}}",
+        "headers": { "Authorization": "Bearer {{token}}" }
+      },
+      "assertions": [
+        {
+          "path": "$.name",
+          "match": { "op": "equals", "expected": "Test User" }
+        }
+      ]
+    }
+  ]
+}
 ```
 
-## How results work
+### Check an OpenAPI contract
 
-Performance tools report warm-up vs steady-state separately. Steady-state reflects the API after JIT/cache warming and is used for threshold evaluation, so you can quantify the warm-up effect instead of hiding it.
+```json
+{
+  "specUrl": "https://api.example.com/openapi.json",
+  "baseUrl": "https://api.example.com",
+  "headers": {
+    "Authorization": "Bearer <token>"
+  },
+  "paths": ["/users"],
+  "methods": ["get", "post"],
+  "previousSpecUrl": "/absolute/path/to/previous-openapi.yaml"
+}
+```
 
-### Latency percentiles
+`specUrl` can be an HTTP(S) URL, an absolute file path, a `file://` path, or an inline JSON document.
 
-Latency is reported as p50, p95, p99, and p999. Percentiles reveal tail latency that an average hides — a 100ms average can mask 1% of requests taking 5 seconds. Use p95/p99 for SLOs (typically p95 < 300ms for user-facing APIs, p99 < 2s).
+### Load test with thresholds
 
-### JSONPath & matchers
+```json
+{
+  "url": "https://api.example.com/auth",
+  "connections": 100,
+  "duration": 60,
+  "headers": {
+    "Authorization": "Bearer <token>"
+  },
+  "thresholds": {
+    "maxP95": 200,
+    "maxP99": 500,
+    "maxErrorRate": 1
+  }
+}
+```
 
-`validate`, `chain`, and `contract-check` use [JSONPath](https://goessner.net/articles/JsonPath/) (via `jsonpath-plus`):
-- `$.name` — field
-- `$.users[0].id` — array index
-- `$..email` — recursive descent
-- `$.tags[*]` — wildcard
+### Fuzz a JSON request body
 
-Matcher operators: `equals`, `notEquals`, `contains`, `startsWith`, `endsWith`, `matches` (regex), `exists`, `notExists`, `typeOf`, `oneOf`, `gt`, `gte`, `lt`, `lte`.
+Use `body` for a JSON string, or `bodyTemplate` when calling the tool with a structured object:
 
-### Chain variables
+```json
+{
+  "url": "https://api.example.com/users",
+  "method": "POST",
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer <token>"
+  },
+  "bodyTemplate": {
+    "name": "Alice",
+    "age": 30
+  },
+  "depth": "normal",
+  "strategies": ["boundary", "injection", "type-swap", "missing-fields"]
+}
+```
 
-Steps can extract values from responses via JSONPath and re-use them in later requests with `{{name}}` interpolation. This enables create → read → update → delete flows.
+The `depth` setting controls the mutation intensity: `quick`, `normal` (default), or `thorough`. By default, a baseline request is sent first and statuses `500`, `502`, `503`, and `504` are treated as hard failures.
+
+### Run a security scan
+
+```json
+{
+  "url": "https://api.example.com/users/123",
+  "headers": {
+    "Authorization": "Bearer <token>"
+  },
+  "authToken": "<token>",
+  "resourceId": "123",
+  "checks": [
+    "auth-bypass",
+    "security-headers",
+    "data-exposure",
+    "idor",
+    "path-traversal"
+  ]
+}
+```
+
+Only scan systems you own or are authorized to test. Security checks and fuzzing send additional requests and may change data when pointed at state-changing endpoints.
+
+## Results and baselines
+
+### Latency
+
+Performance results report p50, p95, p99, and p999 latency, plus throughput and error rate. Tail percentiles are more useful than averages for SLOs: an average can look healthy while a small percentage of requests are very slow.
+
+### Warm-up and steady state
+
+Benchmark-based tools split the run into warm-up and steady-state phases. Warm-up is retained in the output, while load-test and other threshold checks use steady-state metrics so cache and JIT warm-up do not distort pass/fail results.
 
 ### Regression baselines
 
-`regression` and `benchmark` (with `saveAs`) persist results to `.reqstorm/` in the working directory. Regression compares the current run against the stored baseline and can fail on p95/throughput/error-rate deviations.
+`benchmark` can save a result with `saveAs`; `regression` reads and writes named baselines in `.reqstorm/`. Keep this directory with the project or CI workspace when comparing runs across executions.
 
 ## Development
 
 ```bash
-npm run build   # compile src/ → dist/
-npm run dev     # tsc --watch
-npm publish     # build + ship (requires npm login + 2FA)
+npm install
+npm run build   # compile src/ to dist/
+npm run dev     # watch TypeScript changes
 ```
+
+To publish a release:
+
+```bash
+npm run build
+npm publish
+```
+
+`prepublishOnly` runs the build automatically. The package requires npm authentication and the published package contains `dist/`, `README.md`, and `LICENSE`.
 
 ## License
 
