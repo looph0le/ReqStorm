@@ -1,7 +1,7 @@
 # ReqStorm
 
 <p align="center">
-  <img src="docs/reqstorm-icon.svg" alt="ReqStorm logo" width="96" />
+  <img src="docs/reqstorm-icon.svg" alt="ReqStorm logo" width="160" />
 </p>
 
 [![npm version](https://img.shields.io/npm/v/reqstorm.svg)](https://www.npmjs.com/package/reqstorm)
