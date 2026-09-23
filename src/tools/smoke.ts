@@ -1,30 +1,25 @@
-import * as z from "zod/v4";
-import autocannon from "autocannon";
-import type { SmokeResult } from "../utils/types.js";
-import { formatSmoke } from "../utils/formatters.js";
+import * as z from 'zod/v4';
+import autocannon from 'autocannon';
+import type { SmokeResult } from '../utils/types.js';
+import { formatSmoke } from '../utils/formatters.js';
+import { toolResult, toolError } from '../utils/tool-result.js';
+import { reportProgress, type ProgressCtx } from '../utils/progress.js';
 
 export const smokeSchema = z.object({
-  url: z.string().describe("Target URL to smoke test"),
-  method: z.string().default("GET").describe("HTTP method"),
+  url: z.string().describe('Target URL to smoke test'),
+  method: z.string().default('GET').describe('HTTP method'),
   headers: z
     .record(z.string(), z.string())
     .optional()
-    .describe("Request headers (e.g. Authorization, API keys)"),
-  body: z.string().optional().describe("Request body"),
-  expectedStatus: z
-    .number()
-    .int()
-    .optional()
-    .describe("Expected HTTP status code"),
-  expectedBody: z
-    .string()
-    .optional()
-    .describe("Expected substring in response body"),
-  duration: z.number().int().positive().default(5).describe("Test duration in seconds"),
-  connections: z.number().int().positive().default(3).describe("Number of concurrent connections"),
+    .describe('Request headers (e.g. Authorization, API keys)'),
+  body: z.string().optional().describe('Request body'),
+  expectedStatus: z.number().int().optional().describe('Expected HTTP status code'),
+  expectedBody: z.string().optional().describe('Expected substring in response body'),
+  duration: z.number().int().positive().default(5).describe('Test duration in seconds'),
+  connections: z.number().int().positive().default(3).describe('Number of concurrent connections'),
 });
 
-export async function smokeHandler(args: z.infer<typeof smokeSchema>) {
+export async function smokeHandler(args: z.infer<typeof smokeSchema>, ctx: ProgressCtx = {}) {
   args = smokeSchema.parse(args);
   const errors: string[] = [];
   let pass = true;
@@ -39,7 +34,7 @@ export async function smokeHandler(args: z.infer<typeof smokeSchema>) {
       const instance = autocannon(
         {
           url: args.url,
-          method: (args.method ?? "GET") as any,
+          method: (args.method ?? 'GET') as any,
           headers: args.headers,
           body: args.body,
           connections: args.connections ?? 3,
@@ -58,7 +53,20 @@ export async function smokeHandler(args: z.infer<typeof smokeSchema>) {
         }
       );
 
-      instance.on("error", (err: Error) => reject(err));
+      instance.on('error', (err: Error) => reject(err));
+
+      const totalSeconds = args.duration ?? 5;
+      const startedAt = Date.now();
+      (instance as any).on(
+        'tick',
+        () =>
+          void reportProgress(
+            ctx,
+            Math.min((Date.now() - startedAt) / 1000, totalSeconds),
+            totalSeconds,
+            'Smoke test running'
+          )
+      );
     });
 
     const statusStats = result.statusCodeStats ?? {};
@@ -72,7 +80,7 @@ export async function smokeHandler(args: z.infer<typeof smokeSchema>) {
       if (!expectedStatusMet) {
         pass = false;
         errors.push(
-          `Expected status ${args.expectedStatus} (got ${observedStatus ?? "no response"})`
+          `Expected status ${args.expectedStatus} (got ${observedStatus ?? 'no response'})`
         );
       }
     }
@@ -101,10 +109,10 @@ export async function smokeHandler(args: z.infer<typeof smokeSchema>) {
 
     const smokeResult: SmokeResult = {
       url: args.url,
-      method: (args.method ?? "GET").toUpperCase(),
+      method: (args.method ?? 'GET').toUpperCase(),
       statusCode: observedStatus ?? 0,
       duration: result.duration,
-      responseTime: result.duration,
+      responseTime: result.latency.average ?? 0,
       latency,
       expectedStatusMet,
       expectedBodyMet,
@@ -112,18 +120,8 @@ export async function smokeHandler(args: z.infer<typeof smokeSchema>) {
       errors,
     };
 
-    return {
-      content: [{ type: "text" as const, text: formatSmoke(smokeResult) }],
-    };
+    return toolResult(formatSmoke(smokeResult), smokeResult);
   } catch (err: any) {
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: `Smoke test failed: ${err.message ?? err}`,
-        },
-      ],
-      isError: true,
-    };
+    return toolError(`Smoke test failed: ${err.message ?? err}`);
   }
 }

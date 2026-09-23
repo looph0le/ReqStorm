@@ -1,4 +1,4 @@
-import { jsonpathFirst } from "./jsonpath.js";
+import { jsonpathFirst } from './jsonpath.js';
 
 export interface ExtractionMapping {
   [varName: string]: string;
@@ -8,12 +8,9 @@ export interface VariableSet {
   [name: string]: unknown;
 }
 
-export function extractVariables(
-  body: unknown,
-  extract: ExtractionMapping
-): VariableSet {
+export function extractVariables(body: unknown, extract: ExtractionMapping): VariableSet {
   const result: VariableSet = {};
-  const doc = typeof body === "string" ? safeParse(body) : body;
+  const doc = typeof body === 'string' ? safeParse(body) : body;
 
   for (const [varName, jsonPath] of Object.entries(extract)) {
     if (doc === undefined) continue;
@@ -37,7 +34,7 @@ export function interpolate(template: string, variables: VariableSet): string {
   return template.replace(/\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g, (match, key) => {
     const value = lookupKey(variables, key);
     if (value === undefined) return match;
-    if (typeof value === "string") return value;
+    if (typeof value === 'string') return value;
     try {
       return JSON.stringify(value);
     } catch {
@@ -47,11 +44,11 @@ export function interpolate(template: string, variables: VariableSet): string {
 }
 
 function lookupKey(vars: VariableSet, key: string): unknown {
-  const parts = key.split(".");
+  const parts = key.split('.');
   let current: unknown = vars;
   for (const part of parts) {
     if (current === null || current === undefined) return undefined;
-    if (typeof current === "object") {
+    if (typeof current === 'object') {
       current = (current as Record<string, unknown>)[part];
     } else {
       return undefined;
@@ -62,6 +59,6 @@ function lookupKey(vars: VariableSet, key: string): unknown {
 
 export function flattenVariables(vars: VariableSet): VariableSet {
   return Object.fromEntries(
-    Object.entries(vars).map(([k, v]) => [k, typeof v === "string" ? v : JSON.stringify(v)])
+    Object.entries(vars).map(([k, v]) => [k, typeof v === 'string' ? v : JSON.stringify(v)])
   );
 }

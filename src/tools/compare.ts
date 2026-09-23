@@ -1,42 +1,47 @@
-import * as z from "zod/v4";
-import { runBenchmarkSplit } from "../utils/autocannon.js";
-import { formatCompare } from "../utils/formatters.js";
-import type { CompareResult, PhaseResult, BenchmarkResult } from "../utils/types.js";
+import * as z from 'zod/v4';
+import { runBenchmarkSplit } from '../utils/autocannon.js';
+import { formatCompare } from '../utils/formatters.js';
+import type { CompareResult, PhaseResult, BenchmarkResult } from '../utils/types.js';
+import { toolResult, toolError } from '../utils/tool-result.js';
 
 export const compareSchema = z.object({
   baseline: z
     .object({
-      url: z.string().describe("Baseline URL"),
-      method: z.string().default("GET").describe("HTTP method"),
-      headers: z
-        .record(z.string(), z.string())
-        .optional()
-        .describe("Request headers"),
-      body: z.string().optional().describe("Request body"),
+      url: z.string().describe('Baseline URL'),
+      method: z.string().default('GET').describe('HTTP method'),
+      headers: z.record(z.string(), z.string()).optional().describe('Request headers'),
+      body: z.string().optional().describe('Request body'),
     })
-    .describe("Baseline endpoint configuration"),
+    .describe('Baseline endpoint configuration'),
   target: z
     .object({
-      url: z.string().describe("Target URL"),
-      method: z.string().default("GET").describe("HTTP method"),
-      headers: z
-        .record(z.string(), z.string())
-        .optional()
-        .describe("Request headers"),
-      body: z.string().optional().describe("Request body"),
+      url: z.string().describe('Target URL'),
+      method: z.string().default('GET').describe('HTTP method'),
+      headers: z.record(z.string(), z.string()).optional().describe('Request headers'),
+      body: z.string().optional().describe('Request body'),
     })
-    .describe("Target endpoint configuration"),
-  connections: z.number().int().positive().default(10).describe("Concurrent connections"),
-  duration: z.number().int().positive().default(10).describe("Duration per target in seconds"),
-  warmUpDuration: z.number().nonnegative().default(3).describe("Warm-up period in seconds"),
-  pipelining: z.number().int().positive().default(1).describe("HTTP pipelining factor"),
+    .describe('Target endpoint configuration'),
+  connections: z.number().int().positive().default(10).describe('Concurrent connections'),
+  duration: z.number().int().positive().default(10).describe('Duration per target in seconds'),
+  warmUpDuration: z.number().nonnegative().default(3).describe('Warm-up period in seconds'),
+  pipelining: z.number().int().positive().default(1).describe('HTTP pipelining factor'),
   runs: z
     .number()
     .int()
     .min(1)
     .max(5)
     .default(1)
-    .describe("Number of runs per target for statistical confidence"),
+    .describe('Number of runs per target for statistical confidence'),
+  p95DeltaThreshold: z
+    .number()
+    .nonnegative()
+    .default(5)
+    .describe('Verdict threshold: p95 latency delta (%) beyond which a side is FASTER/SLOWER'),
+  errorRateDeltaThreshold: z
+    .number()
+    .nonnegative()
+    .default(1)
+    .describe('Verdict threshold: error-rate delta (%) beyond which results are not SIMILAR'),
 });
 
 interface RunStats {
@@ -56,16 +61,13 @@ function mean(values: number[]): number {
 function stddev(values: number[], meanVal: number): number {
   if (values.length < 2) return 0;
   const variance =
-    values.reduce((acc, v) => acc + Math.pow(v - meanVal, 2), 0) /
-    (values.length - 1);
+    values.reduce((acc, v) => acc + Math.pow(v - meanVal, 2), 0) / (values.length - 1);
   return Math.sqrt(variance);
 }
 
 async function runTarget(
   args: z.infer<typeof compareSchema>,
-  target:
-    | z.infer<typeof compareSchema>["baseline"]
-    | z.infer<typeof compareSchema>["target"],
+  target: z.infer<typeof compareSchema>['baseline'] | z.infer<typeof compareSchema>['target'],
   title: string
 ): Promise<RunStats> {
   const p95Values: number[] = [];
@@ -110,8 +112,8 @@ export async function compareHandler(args: z.infer<typeof compareSchema>) {
   args = compareSchema.parse(args);
   try {
     const [baselineStats, targetStats] = await Promise.all([
-      runTarget(args, args.baseline, "reqstorm-compare-baseline"),
-      runTarget(args, args.target, "reqstorm-compare-target"),
+      runTarget(args, args.baseline, 'reqstorm-compare-baseline'),
+      runTarget(args, args.target, 'reqstorm-compare-target'),
     ]);
 
     const b = baselineStats.last;
@@ -122,8 +124,7 @@ export async function compareHandler(args: z.infer<typeof compareSchema>) {
     const sdP95b = args.runs > 1 ? stddev(baselineStats.p95Values, meanP95b) : 0;
     const sdP95t = args.runs > 1 ? stddev(targetStats.p95Values, meanP95t) : 0;
 
-    const delta = (a: number, bv: number) =>
-      bv > 0 ? ((a - bv) / bv) * 100 : 0;
+    const delta = (a: number, bv: number) => (bv > 0 ? ((a - bv) / bv) * 100 : 0);
 
     const p50Delta = delta(mean(targetStats.p50Values), mean(baselineStats.p50Values));
     const p95Delta = delta(meanP95t, meanP95b);
@@ -137,19 +138,21 @@ export async function compareHandler(args: z.infer<typeof compareSchema>) {
       mean(baselineStats.errorRateValues)
     );
 
-    let verdict = "";
+    let verdict = '';
     let confidence: number | null = null;
     const meanErrorT = mean(targetStats.errorRateValues);
     const meanErrorB = mean(baselineStats.errorRateValues);
+    const p95Threshold = args.p95DeltaThreshold ?? 5;
+    const errorThreshold = args.errorRateDeltaThreshold ?? 1;
 
-    if (p95Delta < -5 && meanErrorT <= meanErrorB) {
-      verdict = "Target is FASTER than baseline";
-    } else if (p95Delta > 5 && meanErrorT >= meanErrorB) {
-      verdict = "Target is SLOWER than baseline";
-    } else if (Math.abs(p95Delta) <= 5 && Math.abs(errorDelta) <= 1) {
-      verdict = "Performance is SIMILAR";
+    if (p95Delta < -p95Threshold && meanErrorT <= meanErrorB) {
+      verdict = 'Target is FASTER than baseline';
+    } else if (p95Delta > p95Threshold && meanErrorT >= meanErrorB) {
+      verdict = 'Target is SLOWER than baseline';
+    } else if (Math.abs(p95Delta) <= p95Threshold && Math.abs(errorDelta) <= errorThreshold) {
+      verdict = 'Performance is SIMILAR';
     } else {
-      verdict = "Mixed results — see detailed metrics above";
+      verdict = 'Mixed results — see detailed metrics above';
     }
 
     if (args.runs > 1 && sdP95b > 0) {
@@ -166,9 +169,9 @@ export async function compareHandler(args: z.infer<typeof compareSchema>) {
 
     const result: CompareResult = {
       baseline: {
-        title: "baseline",
+        title: 'baseline',
         url: args.baseline.url,
-        method: (args.baseline.method ?? "GET").toUpperCase(),
+        method: (args.baseline.method ?? 'GET').toUpperCase(),
         duration: b.duration,
         connections: args.connections,
         pipelining: args.pipelining,
@@ -179,9 +182,9 @@ export async function compareHandler(args: z.infer<typeof compareSchema>) {
         latency: b.latency,
       },
       target: {
-        title: "target",
+        title: 'target',
         url: args.target.url,
-        method: (args.target.method ?? "GET").toUpperCase(),
+        method: (args.target.method ?? 'GET').toUpperCase(),
         duration: t.duration,
         connections: args.connections,
         pipelining: args.pipelining,
@@ -201,25 +204,17 @@ export async function compareHandler(args: z.infer<typeof compareSchema>) {
       verdict,
       runs: args.runs,
       confidence,
+      p95DeltaThreshold: p95Threshold,
+      errorRateDeltaThreshold: errorThreshold,
       meanP95Baseline: meanP95b,
       meanP95Target: meanP95t,
       sdP95Baseline: sdP95b,
       sdP95Target: sdP95t,
     };
 
-    return {
-      content: [{ type: "text" as const, text: formatCompare(result) }],
-    };
+    return toolResult(formatCompare(result), result);
   } catch (err: any) {
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: `Compare test failed: ${err.message ?? err}`,
-        },
-      ],
-      isError: true,
-    };
+    return toolError(`Compare test failed: ${err.message ?? err}`);
   }
 }
 

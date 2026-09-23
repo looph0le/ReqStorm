@@ -44,32 +44,32 @@ ReqStorm needs **Node.js 18 or newer**.
 
 ### Performance testing
 
-| Tool | Use it for |
-| --- | --- |
-| `benchmark` | Measure throughput and p50/p95/p99/p999 latency. Results include overall, warm-up, and steady-state data. |
-| `smoke` | Quickly check that an endpoint responds with the expected status and body. |
-| `load-test` | Run sustained traffic and evaluate steady-state `maxP95`, `maxP99`, and `maxErrorRate` thresholds. |
-| `spike` | Run baseline, sudden surge, and recovery phases; measure recovery against baseline latency. |
-| `soak` | Run long-lived traffic in periodic chunks to find memory leaks, exhaustion, and performance drift. Default duration is 30 minutes. |
-| `stress-test` | Ramp concurrency step by step until latency or error-rate thresholds identify a breaking point. |
-| `compare` | Compare two endpoints or configurations side by side, optionally repeating each target up to five times. |
+| Tool          | Use it for                                                                                                                         |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `benchmark`   | Measure throughput and p50/p95/p99/p999 latency. Results include overall, warm-up, and steady-state data.                          |
+| `smoke`       | Quickly check that an endpoint responds with the expected status and body.                                                         |
+| `load-test`   | Run sustained traffic and evaluate steady-state `maxP95`, `maxP99`, and `maxErrorRate` thresholds.                                 |
+| `spike`       | Run baseline, sudden surge, and recovery phases; measure recovery against baseline latency.                                        |
+| `soak`        | Run long-lived traffic in periodic chunks to find memory leaks, exhaustion, and performance drift. Default duration is 30 minutes. |
+| `stress-test` | Ramp concurrency step by step until latency or error-rate thresholds identify a breaking point.                                    |
+| `compare`     | Compare two endpoints or configurations side by side, optionally repeating each target up to five times.                           |
 
 ### Functional and contract testing
 
-| Tool | Use it for |
-| --- | --- |
-| `validate` | Send one request and assert on JSONPath values, types, comparisons, regexes, array properties, and response-time thresholds. |
-| `chain` | Execute up to 20 ordered requests, extract values from responses, interpolate them into later requests, and assert each step. |
+| Tool             | Use it for                                                                                                                          |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `validate`       | Send one request and assert on JSONPath values, types, comparisons, regexes, array properties, and response-time thresholds.        |
+| `chain`          | Execute up to 20 ordered requests, extract values from responses, interpolate them into later requests, and assert each step.       |
 | `contract-check` | Check a running API against an OpenAPI 3.x JSON/YAML document, including status codes, schemas, content types, and required fields. |
-| `fuzz` | Mutate request bodies with boundary, type-swap, injection, overflow, missing-field, Unicode, format, and null-field strategies. |
-| `regression` | Compare steady-state performance with a saved `.reqstorm/` baseline and optionally save the current run as the new baseline. |
+| `fuzz`           | Mutate request bodies with boundary, type-swap, injection, overflow, missing-field, Unicode, format, and null-field strategies.     |
+| `regression`     | Compare steady-state performance with a saved `.reqstorm/` baseline and optionally save the current run as the new baseline.        |
 
 ### Security and profiling
 
-| Tool | Use it for |
-| --- | --- |
+| Tool            | Use it for                                                                                                                                                       |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `security-scan` | Run selected checks for authentication bypass, IDOR, security headers, data exposure, rate limiting, method override, content-type mismatch, and path traversal. |
-| `profile` | Inspect latency distribution, status-code counts, throughput stability, and error/timeout breakdowns. |
+| `profile`       | Inspect latency distribution, status-code counts, throughput stability, and error/timeout breakdowns.                                                            |
 
 ## Common input conventions
 
@@ -238,13 +238,7 @@ The `depth` setting controls the mutation intensity: `quick`, `normal` (default)
   },
   "authToken": "<token>",
   "resourceId": "123",
-  "checks": [
-    "auth-bypass",
-    "security-headers",
-    "data-exposure",
-    "idor",
-    "path-traversal"
-  ]
+  "checks": ["auth-bypass", "security-headers", "data-exposure", "idor", "path-traversal"]
 }
 ```
 

@@ -1,6 +1,7 @@
-import http from "node:http";
-import https from "node:https";
-import { URL } from "node:url";
+import http from 'node:http';
+import https from 'node:https';
+import { URL } from 'node:url';
+import { PACKAGE_NAME, VERSION } from './package.js';
 
 export interface HttpRequest {
   url: string;
@@ -38,7 +39,7 @@ export function httpRequest(req: HttpRequest): Promise<HttpResponse> {
         return;
       }
 
-      const isHttps = parsed.protocol === "https:";
+      const isHttps = parsed.protocol === 'https:';
       const lib = isHttps ? https : http;
       const clientStart = Date.now();
       let ttfbMs = 0;
@@ -53,18 +54,18 @@ export function httpRequest(req: HttpRequest): Promise<HttpResponse> {
         }
       };
 
-      const method = (req.method ?? "GET").toUpperCase();
-      const hasBody = req.body !== undefined && req.body !== "";
+      const method = (req.method ?? 'GET').toUpperCase();
+      const hasBody = req.body !== undefined && req.body !== '';
 
       const headers: Record<string, string> = {
-        Accept: "*/*",
-        "User-Agent": "reqstorm/1.0.0",
+        Accept: '*/*',
+        'User-Agent': `${PACKAGE_NAME}/${VERSION}`,
         ...(req.headers ?? {}),
       };
 
       if (hasBody) {
-        headers["Content-Type"] = headers["Content-Type"] ?? "application/json";
-        headers["Content-Length"] = String(Buffer.byteLength(req.body ?? ""));
+        headers['Content-Type'] = headers['Content-Type'] ?? 'application/json';
+        headers['Content-Length'] = String(Buffer.byteLength(req.body ?? ''));
       }
 
       const options: http.RequestOptions = {
@@ -89,22 +90,17 @@ export function httpRequest(req: HttpRequest): Promise<HttpResponse> {
         headerRecord = rawHeaders;
         ttfbMs = Date.now() - clientStart;
 
-        if (
-          status >= 300 &&
-          status < 400 &&
-          res.headers.location &&
-          redirectsUsed < maxRedirects
-        ) {
+        if (status >= 300 && status < 400 && res.headers.location && redirectsUsed < maxRedirects) {
           res.resume();
           const nextUrl = new URL(res.headers.location, urlStr).toString();
           doRequest(nextUrl, redirectsUsed + 1);
           return;
         }
 
-        res.on("data", (chunk: Buffer) => bodyChunks.push(chunk));
-        res.on("end", () => {
+        res.on('data', (chunk: Buffer) => bodyChunks.push(chunk));
+        res.on('end', () => {
           if (settled) return;
-          const body = Buffer.concat(bodyChunks).toString("utf-8");
+          const body = Buffer.concat(bodyChunks).toString('utf-8');
           done(() =>
             resolve({
               status,
@@ -116,7 +112,7 @@ export function httpRequest(req: HttpRequest): Promise<HttpResponse> {
             })
           );
         });
-        res.on("error", (err) => done(() => reject(err)));
+        res.on('error', (err) => done(() => reject(err)));
       });
 
       if (hasBody) clientReq.write(req.body);
@@ -128,7 +124,7 @@ export function httpRequest(req: HttpRequest): Promise<HttpResponse> {
       }, timeout);
       timer.unref?.();
 
-      clientReq.on("error", (err) => {
+      clientReq.on('error', (err) => {
         clearTimeout(timer);
         done(() => reject(err));
       });

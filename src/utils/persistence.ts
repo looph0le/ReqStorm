@@ -1,5 +1,5 @@
-import fs from "node:fs";
-import path from "node:path";
+import fs from 'node:fs';
+import path from 'node:path';
 
 export interface StoredResult {
   name: string;
@@ -8,7 +8,7 @@ export interface StoredResult {
   data: unknown;
 }
 
-const RESULTS_DIR = ".reqstorm";
+const RESULTS_DIR = '.reqstorm';
 
 function getResultsDir(): string {
   return path.join(process.cwd(), RESULTS_DIR);
@@ -22,7 +22,7 @@ function ensureDir(): void {
 }
 
 function sanitizeName(name: string): string {
-  return name.replace(/[^a-zA-Z0-9._-]/g, "_");
+  return name.replace(/[^a-zA-Z0-9._-]/g, '_');
 }
 
 function filePathFor(name: string): string {
@@ -44,7 +44,7 @@ export function loadResult(name: string): StoredResult | null {
   const fp = filePathFor(name);
   if (!fs.existsSync(fp)) return null;
   try {
-    return JSON.parse(fs.readFileSync(fp, "utf-8")) as StoredResult;
+    return JSON.parse(fs.readFileSync(fp, 'utf-8')) as StoredResult;
   } catch {
     return null;
   }
@@ -53,13 +53,11 @@ export function loadResult(name: string): StoredResult | null {
 export function listResults(): StoredResult[] {
   const dir = getResultsDir();
   if (!fs.existsSync(dir)) return [];
-  const files = fs.readdirSync(dir).filter((f) => f.endsWith(".json"));
+  const files = fs.readdirSync(dir).filter((f) => f.endsWith('.json'));
   const results: StoredResult[] = [];
   for (const f of files) {
     try {
-      results.push(
-        JSON.parse(fs.readFileSync(path.join(dir, f), "utf-8")) as StoredResult
-      );
+      results.push(JSON.parse(fs.readFileSync(path.join(dir, f), 'utf-8')) as StoredResult);
     } catch {
       // skip corrupt files
     }

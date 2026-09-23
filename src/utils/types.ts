@@ -88,7 +88,7 @@ export interface SoakResult {
   snapshots: SoakSnapshot[];
   finalLatencyDrift: number;
   finalErrorRateDrift: number;
-  memoryTrend: "stable" | "growing" | "unknown";
+  memoryTrend: 'stable' | 'growing' | 'unknown';
   passed: boolean;
 }
 
@@ -98,6 +98,8 @@ export interface SoakSnapshot {
   latency: LatencyPercentiles;
   throughput: number;
   errorRate: number;
+  heapUsedMb: number;
+  rssMb: number;
 }
 
 export interface StressStep {
@@ -134,6 +136,8 @@ export interface CompareResult {
   meanP95Target?: number;
   sdP95Baseline?: number;
   sdP95Target?: number;
+  p95DeltaThreshold?: number;
+  errorRateDeltaThreshold?: number;
 }
 
 export interface ValidationAssertion {
@@ -254,7 +258,7 @@ export interface ProfileResult {
 
 export interface SecurityCheckResult {
   name: string;
-  status: "ok" | "warn" | "fail" | "error";
+  status: 'ok' | 'warn' | 'fail' | 'error';
   detail: string;
 }
 
@@ -292,4 +296,3 @@ export interface RegressionResult {
   baselineTimestamp: string | null;
   baselineUpdated: boolean;
 }
-

@@ -1,4 +1,4 @@
-import { JSONPath } from "jsonpath-plus";
+import { JSONPath } from 'jsonpath-plus';
 
 export function jsonpathEvaluate(doc: unknown, path: string): unknown[] {
   try {

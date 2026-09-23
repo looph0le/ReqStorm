@@ -1,9 +1,5 @@
-import autocannon from "autocannon";
-import type {
-  BenchmarkResult,
-  LatencyPercentiles,
-  PhaseResult,
-} from "./types.js";
+import autocannon from 'autocannon';
+import type { BenchmarkResult, LatencyPercentiles, PhaseResult } from './types.js';
 
 export interface RunOptions {
   url: string;
@@ -15,6 +11,7 @@ export interface RunOptions {
   pipelining?: number;
   warmUpDuration?: number | null;
   title?: string;
+  onTick?: (elapsedSeconds: number, totalSeconds: number) => void;
 }
 
 interface SplitResult {
@@ -32,15 +29,10 @@ function extractLatency(result: autocannon.Result): LatencyPercentiles {
   };
 }
 
-function buildPhaseResult(
-  label: string,
-  duration: number,
-  result: autocannon.Result
-): PhaseResult {
+function buildPhaseResult(label: string, duration: number, result: autocannon.Result): PhaseResult {
   const totalRequests = result.requests.total;
   const totalErrors = result.errors;
-  const errorRate =
-    totalRequests > 0 ? (totalErrors / totalRequests) * 100 : 0;
+  const errorRate = totalRequests > 0 ? (totalErrors / totalRequests) * 100 : 0;
 
   return {
     label,
@@ -58,58 +50,43 @@ export async function runBenchmark(opts: RunOptions): Promise<BenchmarkResult> {
   return buildBenchmarkResult(opts, result, null, null);
 }
 
-export async function runBenchmarkSplit(
-  opts: RunOptions
-): Promise<SplitResult> {
+export async function runBenchmarkSplit(opts: RunOptions): Promise<SplitResult> {
   const warmUpMs = opts.warmUpDuration ?? 3000;
   const totalDuration = opts.duration ?? 10;
 
   if (warmUpMs <= 0 || warmUpMs >= totalDuration * 1000) {
     const result = await executeAutocannon(opts);
     const overall = buildBenchmarkResult(opts, result, null, null);
-    const steadyState = buildPhaseResult("Steady-State", overall.duration, result);
+    const steadyState = buildPhaseResult('Steady-State', overall.duration, result);
     return { warmUp: null, steadyState, overall };
   }
 
   const warmUpResult = await executeAutocannon({
     ...opts,
     duration: Math.ceil(warmUpMs / 1000),
-    title: `${opts.title ?? "reqstorm"}-warmup`,
+    title: `${opts.title ?? 'reqstorm'}-warmup`,
   });
 
-  const warmUp = buildPhaseResult(
-    "Warm-up",
-    Math.ceil(warmUpMs / 1000),
-    warmUpResult
-  );
+  const warmUp = buildPhaseResult('Warm-up', Math.ceil(warmUpMs / 1000), warmUpResult);
 
   const steadyDuration = totalDuration - Math.ceil(warmUpMs / 1000);
   const steadyResult = await executeAutocannon({
     ...opts,
     duration: steadyDuration,
-    title: `${opts.title ?? "reqstorm"}-steady`,
+    title: `${opts.title ?? 'reqstorm'}-steady`,
   });
 
-  const steadyState = buildPhaseResult(
-    "Steady-State",
-    steadyDuration,
-    steadyResult
-  );
+  const steadyState = buildPhaseResult('Steady-State', steadyDuration, steadyResult);
 
   const overallResult = mergeResults(warmUpResult, steadyResult);
-  const overall = buildBenchmarkResult(
-    opts,
-    overallResult,
-    warmUp,
-    steadyState
-  );
+  const overall = buildBenchmarkResult(opts, overallResult, warmUp, steadyState);
 
   return { warmUp, steadyState, overall };
 }
 
 export async function runSinglePhase(opts: RunOptions): Promise<PhaseResult> {
   const result = await executeAutocannon(opts);
-  return buildPhaseResult(opts.title ?? "phase", opts.duration ?? 10, result);
+  return buildPhaseResult(opts.title ?? 'phase', opts.duration ?? 10, result);
 }
 
 function buildBenchmarkResult(
@@ -120,13 +97,12 @@ function buildBenchmarkResult(
 ): BenchmarkResult {
   const totalRequests = result.requests.total;
   const totalErrors = result.errors;
-  const errorRate =
-    totalRequests > 0 ? (totalErrors / totalRequests) * 100 : 0;
+  const errorRate = totalRequests > 0 ? (totalErrors / totalRequests) * 100 : 0;
 
   return {
-    title: opts.title ?? "reqstorm",
+    title: opts.title ?? 'reqstorm',
     url: opts.url,
-    method: (opts.method ?? "GET").toUpperCase(),
+    method: (opts.method ?? 'GET').toUpperCase(),
     duration: result.duration,
     connections: opts.connections ?? 10,
     pipelining: opts.pipelining ?? 1,
@@ -140,18 +116,13 @@ function buildBenchmarkResult(
   };
 }
 
-function mergeResults(
-  a: autocannon.Result,
-  b: autocannon.Result
-): autocannon.Result {
+export function mergeResults(a: autocannon.Result, b: autocannon.Result): autocannon.Result {
   const totalRequests = a.requests.total + b.requests.total;
   const totalErrors = a.errors + b.errors;
   const totalDuration = a.duration + b.duration;
 
   const weighted = (pa: number, pb: number) =>
-    totalRequests > 0
-      ? (pa * a.requests.total + pb * b.requests.total) / totalRequests
-      : 0;
+    totalRequests > 0 ? (pa * a.requests.total + pb * b.requests.total) / totalRequests : 0;
 
   return {
     ...b,
@@ -174,10 +145,11 @@ function mergeResults(
 
 function executeAutocannon(opts: RunOptions): Promise<autocannon.Result> {
   return new Promise((resolve, reject) => {
+    const startedAt = Date.now();
     const instance = autocannon(
       {
         url: opts.url,
-        method: (opts.method ?? "GET") as any,
+        method: (opts.method ?? 'GET') as any,
         headers: opts.headers,
         body: opts.body,
         connections: opts.connections ?? 10,
@@ -191,8 +163,17 @@ function executeAutocannon(opts: RunOptions): Promise<autocannon.Result> {
       }
     );
 
-    instance.on("error", (err) => {
+    instance.on('error', (err) => {
       reject(err);
     });
+
+    const totalSeconds = opts.duration ?? 10;
+    if (opts.onTick) {
+      const i: any = instance;
+      i.on('tick', () => {
+        const elapsed = Math.min((Date.now() - startedAt) / 1000, totalSeconds);
+        opts.onTick?.(elapsed, totalSeconds);
+      });
+    }
   });
 }
