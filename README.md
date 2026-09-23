@@ -1,8 +1,8 @@
-# ReqStorm
-
 <p align="center">
-  <img src="docs/reqstorm-icon.svg" alt="ReqStorm logo" width="160" />
+  <img src="docs/reqstorm-icon.svg" alt="ReqStorm logo" width="220" />
 </p>
+
+<h1 align="center">ReqStorm</h1>
 
 [![npm version](https://img.shields.io/npm/v/reqstorm.svg)](https://www.npmjs.com/package/reqstorm)
 [![Downloads](https://img.shields.io/npm/dm/reqstorm.svg)](https://www.npmjs.com/package/reqstorm)
