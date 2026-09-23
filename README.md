@@ -1,5 +1,9 @@
 # ReqStorm
 
+<p align="center">
+  <img src="docs/reqstorm-icon.svg" alt="ReqStorm logo" width="96" />
+</p>
+
 [![npm version](https://img.shields.io/npm/v/reqstorm.svg)](https://www.npmjs.com/package/reqstorm)
 [![Downloads](https://img.shields.io/npm/dm/reqstorm.svg)](https://www.npmjs.com/package/reqstorm)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
