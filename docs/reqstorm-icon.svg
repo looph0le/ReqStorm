@@ -1,0 +1,97 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 200 200"
+  role="img"
+  aria-labelledby="title desc"
+>
+  <title id="title">ReqStorm</title>
+  <desc id="desc">
+    ReqStorm icon — a bold electric lightning bolt on a dark slate tile, framed by request
+    braces like a terminal prompt.
+  </desc>
+
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#18223f" />
+      <stop offset="1" stop-color="#080e1c" />
+    </linearGradient>
+    <linearGradient id="bolt" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7df3ff" />
+      <stop offset="0.45" stop-color="#22d3ee" />
+      <stop offset="1" stop-color="#2563eb" />
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="3.8" result="blur" />
+      <feColorMatrix
+        in="blur"
+        type="matrix"
+        values="0 0 0 0 0.13  0 0 0 0 0.83  0 0 0 0 0.95  0 0 0 0.5 0"
+        result="c"
+      />
+      <feMerge>
+        <feMergeNode in="c" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- left brace (prompt frame) -->
+  <path
+    d="M 30 70.1 C 26.5 70.1 26.5 73.6 26.5 77.1 C 26.5 83.3 26.5 87.6 23 91.2 C 17.7 96.5 14.2 97.8 14.2 100 C 14.2 102.2 17.7 103.5 23 108.8 C 26.5 112.3 26.5 116.7 26.5 122.9 C 26.5 126.4 26.5 129.9 30 129.9"
+    fill="none"
+    stroke="#64748b"
+    stroke-width="5.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- tile -->
+  <rect x="40" y="40" width="120" height="120" rx="22" fill="url(#tile)" stroke="#2b3c60" stroke-width="1.5" />
+  <rect
+    x="42.5"
+    y="42.5"
+    width="115"
+    height="115"
+    rx="20"
+    fill="none"
+    stroke="#ffffff"
+    stroke-opacity="0.06"
+    stroke-width="1"
+  />
+
+  <!-- right brace (prompt frame) -->
+  <path
+    d="M 170 70.1 C 173.5 70.1 173.5 73.6 173.5 77.1 C 173.5 83.3 173.5 87.6 177 91.2 C 182.3 96.5 185.8 97.8 185.8 100 C 185.8 102.2 182.3 103.5 177 108.8 C 173.5 112.3 173.5 116.7 173.5 122.9 C 173.5 126.4 173.5 129.9 170 129.9"
+    fill="none"
+    stroke="#64748b"
+    stroke-width="5.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- glow behind bolt -->
+  <path
+    d="M 111.7 47.4 L 65.5 102 L 88.6 102 L 73.9 152.4 L 134.8 95.7 L 115.9 95.7 Z"
+    fill="#38bdf8"
+    filter="url(#glow)"
+  />
+
+  <!-- bold lightning bolt -->
+  <path
+    d="M 111.7 47.4 L 65.5 102 L 88.6 102 L 73.9 152.4 L 134.8 95.7 L 115.9 95.7 Z"
+    fill="url(#bolt)"
+    stroke="#0f172a"
+    stroke-width="2.5"
+    stroke-linejoin="round"
+  />
+
+  <!-- electric sparks -->
+  <g stroke="#67e8f9" stroke-width="3" stroke-linecap="round" opacity="0.9">
+    <path d="M 53.8 67.2 H 65.6" />
+    <path d="M 59.7 61.4 V 73" />
+  </g>
+  <g stroke="#67e8f9" stroke-width="3" stroke-linecap="round" opacity="0.6">
+    <path d="M 126 129.4 H 136.1" />
+    <path d="M 130.2 123.5 V 135.3" />
+  </g>
+</svg>

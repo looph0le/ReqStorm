@@ -1,0 +1,1290 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ReqStorm — API testing platform for MCP</title>
+    <meta
+      name="description"
+      content="ReqStorm is an MCP server for API testing, performance, contract, and security analysis. 14 tools, one stdio server."
+    />
+    <link rel="icon" type="image/svg+xml" href="reqstorm-icon.svg" />
+    <style>
+      :root {
+        --bg0: #070b14;
+        --bg1: #0b1220;
+        --panel: #0e1626;
+        --panel2: #111a2e;
+        --line: #1f2c49;
+        --line2: #2a3a5f;
+        --text: #e8eef9;
+        --muted: #94a3c0;
+        --dim: #5f7196;
+        --cyan: #22d3ee;
+        --cyan-dim: #0e7490;
+        --blue: #3b82f6;
+        --violet: #7c6cff;
+        --green: #34d399;
+        --amber: #fbbf24;
+        --red: #f87171;
+        --sans: 'Segoe UI', Inter, system-ui, -apple-system, sans-serif;
+        --mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+        --radius: 14px;
+        --maxw: 1120px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg0);
+        color: var(--text);
+        font-family: var(--sans);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
+      }
+
+      /* backdrop: grid + glows */
+      body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: -2;
+        background:
+          radial-gradient(1100px 520px at 18% -8%, rgba(34, 211, 238, 0.13), transparent 60%),
+          radial-gradient(900px 500px at 88% 4%, rgba(59, 130, 246, 0.14), transparent 62%),
+          radial-gradient(1000px 700px at 50% 115%, rgba(124, 108, 255, 0.1), transparent 60%),
+          var(--bg0);
+      }
+      body::after {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        background-image:
+          linear-gradient(rgba(59, 130, 246, 0.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(59, 130, 246, 0.05) 1px, transparent 1px);
+        background-size: 44px 44px;
+        -webkit-mask-image: radial-gradient(1200px 800px at 50% 0%, #000 30%, transparent 78%);
+        mask-image: radial-gradient(1200px 800px at 50% 0%, #000 30%, transparent 78%);
+      }
+
+      a {
+        color: var(--cyan);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      code {
+        font-family: var(--mono);
+        font-size: 0.88em;
+      }
+
+      .wrap {
+        max-width: var(--maxw);
+        margin: 0 auto;
+        padding: 0 24px;
+      }
+
+      /* ---------- nav ---------- */
+      nav {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        backdrop-filter: blur(12px);
+        background: rgba(7, 11, 20, 0.72);
+        border-bottom: 1px solid var(--line);
+      }
+      nav .inner {
+        display: flex;
+        align-items: center;
+        gap: 22px;
+        height: 64px;
+      }
+      nav .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 800;
+        letter-spacing: -0.3px;
+        color: var(--text);
+      }
+      nav .brand img {
+        height: 32px;
+        width: auto;
+      }
+      nav .links {
+        margin-left: auto;
+        display: flex;
+        gap: 20px;
+        font-size: 14px;
+        color: var(--muted);
+      }
+      nav .links a {
+        color: var(--muted);
+      }
+      nav .links a:hover {
+        color: var(--cyan);
+        text-decoration: none;
+      }
+
+      /* ---------- hero ---------- */
+      .hero {
+        padding: 76px 0 56px;
+        text-align: center;
+      }
+      .hero .logo {
+        height: 128px;
+        width: auto;
+        margin-bottom: 26px;
+      }
+      .hero h1 {
+        margin: 0 0 12px;
+        font-size: clamp(44px, 7vw, 74px);
+        letter-spacing: -2px;
+        line-height: 1.05;
+      }
+      .hero h1 .req {
+        color: var(--text);
+      }
+      .hero h1 .storm {
+        background: linear-gradient(90deg, var(--cyan), #60a5fa);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .hero p.tagline {
+        max-width: 640px;
+        margin: 0 auto 26px;
+        color: var(--muted);
+        font-size: 18px;
+      }
+      .hero p.tagline code {
+        color: var(--cyan);
+        background: rgba(34, 211, 238, 0.1);
+        padding: 2px 7px;
+        border-radius: 6px;
+      }
+      .badges {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 30px;
+      }
+      .badges img {
+        height: 22px;
+        border-radius: 4px;
+      }
+      .cta {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 14px;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 22px;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 15px;
+        border: 1px solid transparent;
+      }
+      .btn.primary {
+        background: linear-gradient(90deg, var(--cyan), var(--blue));
+        color: #04121f;
+      }
+      .btn.primary:hover {
+        filter: brightness(1.08);
+        text-decoration: none;
+      }
+      .btn.ghost {
+        border-color: var(--line2);
+        color: var(--text);
+        background: rgba(14, 22, 38, 0.6);
+      }
+      .btn.ghost:hover {
+        border-color: var(--cyan);
+        text-decoration: none;
+      }
+
+      /* ---------- terminal ---------- */
+      .term {
+        margin: 0 auto;
+        max-width: 780px;
+        margin-top: 48px;
+        text-align: left;
+        background: #0a0f1d;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        overflow: hidden;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+      }
+      .term .bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 16px;
+        background: var(--panel2);
+        border-bottom: 1px solid var(--line);
+      }
+      .term .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+      }
+      .term .d1 {
+        background: #ff5f57;
+      }
+      .term .d2 {
+        background: #febc2e;
+      }
+      .term .d3 {
+        background: #28c840;
+      }
+      .term .tabs {
+        margin-left: 14px;
+        display: flex;
+        gap: 6px;
+        font-family: var(--mono);
+        font-size: 12px;
+      }
+      .term .tab {
+        padding: 3px 10px;
+        border-radius: 6px;
+        color: var(--muted);
+        background: rgba(255, 255, 255, 0.04);
+        cursor: pointer;
+      }
+      .term .tab.active {
+        color: var(--cyan);
+        background: rgba(34, 211, 238, 0.12);
+      }
+      .term pre {
+        margin: 0;
+        padding: 20px 26px 24px;
+        overflow-x: auto;
+        font-family: var(--mono);
+        font-size: 13.5px;
+        line-height: 1.55;
+        color: #c8d6ef;
+      }
+      .term pre .dim {
+        color: var(--dim);
+      }
+      .term pre .ok {
+        color: var(--green);
+      }
+      .term pre .warn {
+        color: var(--amber);
+      }
+      .term pre .fail {
+        color: var(--red);
+      }
+      .term pre .hi {
+        color: var(--cyan);
+      }
+      .term pre .b {
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      /* ---------- stats ---------- */
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 14px;
+        margin: 60px 0 10px;
+      }
+      .stat {
+        text-align: center;
+        padding: 22px 14px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+      }
+      .stat .num {
+        font-size: 34px;
+        font-weight: 800;
+        letter-spacing: -1px;
+        background: linear-gradient(90deg, var(--cyan), #60a5fa);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .stat .lbl {
+        margin-top: 4px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      /* ---------- sections ---------- */
+      section {
+        padding: 70px 0 10px;
+      }
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-family: var(--mono);
+        font-size: 13px;
+        color: var(--cyan);
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+      }
+      .eyebrow::before {
+        content: '';
+        width: 26px;
+        height: 2px;
+        background: linear-gradient(90deg, var(--cyan), transparent);
+      }
+      h2 {
+        margin: 0 0 12px;
+        font-size: clamp(28px, 4vw, 40px);
+        letter-spacing: -1px;
+      }
+      .lead {
+        max-width: 720px;
+        color: var(--muted);
+        margin: 0 0 34px;
+        font-size: 16px;
+      }
+
+      .grid2 {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 40px;
+        align-items: start;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 20px 22px;
+      }
+      .panel h3 {
+        margin: 0 0 10px;
+        font-size: 17px;
+      }
+
+      .codeblock {
+        position: relative;
+        background: #0a0f1d;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+      }
+      .codeblock pre {
+        margin: 0;
+        padding: 16px 18px;
+        overflow-x: auto;
+        font-family: var(--mono);
+        font-size: 13px;
+        line-height: 1.6;
+        color: #c8d6ef;
+      }
+      .codeblock .tok-k {
+        color: #c792ea;
+      }
+      .codeblock .tok-s {
+        color: #7ee787;
+      }
+      .codeblock .tok-v {
+        color: #84a7ff;
+      }
+      .codeblock .tok-c {
+        color: #5a6b8c;
+      }
+
+      .prompt {
+        margin-top: 20px;
+        display: flex;
+        gap: 12px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 16px 18px;
+        align-items: flex-start;
+      }
+      .prompt .who {
+        font-family: var(--mono);
+        font-weight: 700;
+        color: var(--cyan);
+        flex-shrink: 0;
+      }
+      .prompt p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14.5px;
+      }
+      .prompt p code {
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.06);
+        padding: 1px 6px;
+        border-radius: 5px;
+      }
+
+      /* ---------- tools ---------- */
+      .group {
+        margin-bottom: 34px;
+      }
+      .group h3 {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0 0 14px;
+        font-size: 18px;
+      }
+      .group h3 .pill {
+        font-family: var(--mono);
+        font-size: 12px;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--line2);
+        color: var(--muted);
+      }
+      .tools-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 14px;
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 18px;
+        transition:
+          border-color 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+      .card:hover {
+        border-color: var(--cyan-dim);
+        transform: translateY(-2px);
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
+      }
+      .card .name {
+        font-family: var(--mono);
+        font-weight: 700;
+        font-size: 15px;
+        color: var(--cyan);
+        margin-bottom: 6px;
+      }
+      .card .desc {
+        margin: 0;
+        font-size: 13.5px;
+        color: var(--muted);
+      }
+
+      /* ---------- features ---------- */
+      .feat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 14px;
+      }
+      .feat {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 20px;
+      }
+      .feat .ic {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        font-size: 18px;
+        margin-bottom: 12px;
+        border: 1px solid var(--line2);
+        background: rgba(34, 211, 238, 0.08);
+      }
+      .feat h4 {
+        margin: 0 0 6px;
+        font-size: 15.5px;
+      }
+      .feat p {
+        margin: 0;
+        font-size: 13.5px;
+        color: var(--muted);
+      }
+      .feat code {
+        color: var(--cyan);
+        background: rgba(34, 211, 238, 0.1);
+        padding: 1px 6px;
+        border-radius: 5px;
+        font-size: 0.85em;
+      }
+
+      /* ---------- examples ---------- */
+      .examples .grid2 {
+        grid-template-columns: 1fr 1fr;
+      }
+      .examples .term {
+        margin: 0;
+        max-width: none;
+      }
+
+      /* ---------- install ---------- */
+      .install-steps {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 14px;
+        margin-top: 10px;
+      }
+      .step {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 20px;
+      }
+      .step .n {
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--cyan);
+        border: 1px solid var(--line2);
+        border-radius: 999px;
+        padding: 2px 9px;
+        display: inline-block;
+        margin-bottom: 10px;
+      }
+      .step h4 {
+        margin: 0 0 6px;
+        font-size: 15.5px;
+      }
+      .step p {
+        margin: 0 0 12px;
+        font-size: 13.5px;
+        color: var(--muted);
+      }
+
+      /* ---------- footer ---------- */
+      footer {
+        margin-top: 90px;
+        border-top: 1px solid var(--line);
+        padding: 40px 0 48px;
+        background: rgba(7, 11, 20, 0.6);
+      }
+      .foot {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        align-items: center;
+      }
+      .foot .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 800;
+        color: var(--text);
+      }
+      .foot img {
+        height: 40px;
+        width: auto;
+      }
+      .foot .links {
+        margin-left: auto;
+        display: flex;
+        gap: 18px;
+        font-size: 14px;
+        color: var(--muted);
+      }
+      .foot p.legal {
+        margin: 18px 0 0;
+        font-size: 13px;
+        color: var(--dim);
+      }
+
+      @media (max-width: 820px) {
+        .grid2,
+        .examples .grid2 {
+          grid-template-columns: 1fr;
+        }
+        nav .links {
+          display: none;
+        }
+      }
+      @media (prefers-reduced-motion) {
+        .card {
+          transition: none;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <nav>
+      <div class="wrap inner">
+        <a class="brand" href="#top">
+          <img src="reqstorm-icon.svg" alt="ReqStorm logo" height="34" />
+          <span>ReqStorm</span>
+        </a>
+        <div class="links">
+          <a href="#tools">Tools</a>
+          <a href="#features">Features</a>
+          <a href="#examples">Examples</a>
+          <a href="#quickstart">Quick start</a>
+          <a href="#install">Install</a>
+        </div>
+      </div>
+    </nav>
+
+    <header class="hero wrap" id="top">
+      <img class="logo" src="reqstorm-icon.svg" alt="ReqStorm logo" />
+      <h1><span class="req">Req</span><span class="storm">Storm</span></h1>
+      <p class="tagline">
+        The complete API testing platform — shipped as an
+        <code>MCP server</code> over stdio with 14 tools for performance, functional validation,
+        contract checks, fuzzing, and security analysis.
+      </p>
+      <div class="badges">
+        <img src="https://img.shields.io/npm/v/reqstorm.svg" alt="npm version" />
+        <img src="https://img.shields.io/npm/dm/reqstorm.svg" alt="npm downloads" />
+        <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="MIT license" />
+        <img src="https://mcpservers.org/badge.svg" alt="Listed on mcpservers.org" />
+      </div>
+      <div class="cta">
+        <a class="btn primary" href="#quickstart">Get started</a>
+        <a
+          class="btn ghost"
+          href="https://github.com/looph0le/ReqStorm"
+          target="_blank"
+          rel="noopener"
+        >
+          GitHub →
+        </a>
+      </div>
+
+      <div class="term">
+        <div class="bar">
+          <span class="dot d1"></span>
+          <span class="dot d2"></span>
+          <span class="dot d3"></span>
+          <div class="tabs">
+            <span class="tab active" data-tab="bench">benchmark</span>
+            <span class="tab" data-tab="stress">stress-test</span>
+            <span class="tab" data-tab="compare">compare</span>
+          </div>
+        </div>
+
+        <pre
+          id="tab-bench"
+          class="pane"
+        ><span class="dim">══════════════════════════════════════════════════</span>
+  <span class="b">Benchmark: GET https://api.example.com/users</span>
+<span class="dim">══════════════════════════════════════════════════</span>
+
+<span class="dim">Duration:</span>        30s
+<span class="dim">Connections:</span>     50
+<span class="dim">Pipelining:</span>      1
+<span class="dim">Total Requests:</span>  <span class="hi">21,847</span>
+
+<span class="dim">Warm-up (5s):</span>
+  Requests:    8,412
+  p50: 18.2ms | p95: 41.7ms | p99: 68.3ms
+  Throughput:  1,720 req/s | Errors: 0 (0.00%)
+
+<span class="dim">Steady-state (25s):</span>
+  Requests:    13,435
+  p50: 16.4ms | p95: 38.9ms | p99: 63.1ms
+  Throughput:  <span class="hi">1,872 req/s</span> | Errors: 4 (0.03%)
+
+<span class="dim">Overall:</span>
+  <span class="dim">Latency (ms):</span>
+    p50: 16.9ms | p95: 39.6ms | p99: 64.5ms | p999: 112.8ms
+
+  <span class="dim">Throughput:</span>    1,846 req/s
+  <span class="dim">Errors:</span>        4 (0.03%)</pre>
+
+        <pre
+          id="tab-stress"
+          class="pane"
+          hidden
+        ><span class="dim">══════════════════════════════════════════════════</span>
+  <span class="b">Stress Test: GET https://api.example.com/users</span>
+<span class="dim">══════════════════════════════════════════════════</span>
+
+  Conns │ p50       │ p95       │ p99       │ Req/s   │ Errors
+  ──────┼───────────┼───────────┼───────────┼─────────┼────────
+    10 conns │ p50: 12.1ms  │ p95: 24.3ms  │ p99: 41.0ms  │   1,209 req/s │ <span class="ok">errors: 0.00%</span>
+    25 conns │ p50: 14.8ms  │ p95: 29.6ms  │ p99: 52.2ms  │   1,631 req/s │ <span class="ok">errors: 0.00%</span>
+    50 conns │ p50: 17.3ms  │ p95: 38.1ms  │ p99: 64.7ms  │   1,872 req/s │ <span class="ok">errors: 0.00%</span>
+   100 conns │ p50: 21.9ms  │ p95: 47.5ms  │ p99: 88.9ms  │   2,148 req/s │ <span class="ok">errors: 0.00%</span>
+   200 conns │ p50: 38.4ms  │ p95: 96.2ms  │ p99: 174.5ms │   <span class="hi">2,203 req/s</span> │ <span class="warn">errors: 0.31%</span>
+   400 conns │ p50: 92.7ms  │ p95: 248.9ms │ p99: 461.2ms │   2,156 req/s │ <span class="fail">errors: 4.12%</span>
+
+  <span class="dim">Max Throughput:</span>     2,203 req/s at 200 conns
+  <span class="dim">Breaking Point:</span>     <span class="warn">400 conns</span></pre>
+
+        <pre
+          id="tab-compare"
+          class="pane"
+          hidden
+        ><span class="dim">══════════════════════════════════════════════════</span>
+  <span class="b">A/B Comparison (3 runs)</span>
+<span class="dim">══════════════════════════════════════════════════</span>
+
+  <span class="dim">Baseline:</span> GET https://api.example.com/v1/users
+  <span class="dim">Target:</span>   GET https://api.example.com/v2/users
+
+  <span class="dim">Baseline        Target          Delta</span>
+<span class="dim">  ─────────────────────────────────────────────────────────</span>
+  p50:              18.2ms          12.4ms           <span class="ok">-31.9%</span>
+  p95:              41.7ms          27.9ms           <span class="ok">-33.1%</span>
+  p99:              68.3ms          44.6ms           <span class="ok">-34.7%</span>
+  Throughput:       1,846 req/s     2,312 req/s      <span class="ok">+25.2%</span>
+  Error Rate:       0.03%           0.00%           -100.0%
+
+  <span class="dim">Verdict:</span> <span class="ok">target wins</span>
+
+  <span class="dim">Statistical Confidence:</span>
+    Baseline p95: 41.1ms ± 1.3ms
+    Target p95:   27.6ms ± 0.9ms
+    Confidence:   <span class="ok">97.4%</span></pre>
+      </div>
+    </header>
+
+    <section class="wrap">
+      <div class="stats">
+        <div class="stat">
+          <div class="num">14</div>
+          <div class="lbl">tools</div>
+        </div>
+        <div class="stat">
+          <div class="num">3</div>
+          <div class="lbl">categories</div>
+        </div>
+        <div class="stat">
+          <div class="num">13</div>
+          <div class="lbl">matcher operators</div>
+        </div>
+        <div class="stat">
+          <div class="num">20</div>
+          <div class="lbl">chain steps</div>
+        </div>
+        <div class="stat">
+          <div class="num">30m</div>
+          <div class="lbl">soak default</div>
+        </div>
+        <div class="stat">
+          <div class="num">18+</div>
+          <div class="lbl">Node.js</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap" id="about">
+      <div class="grid2">
+        <div>
+          <div class="eyebrow">What is ReqStorm</div>
+          <h2>API testing infrastructure, from one MCP server</h2>
+          <p class="lead">
+            ReqStorm implements the
+            <a href="https://modelcontextprotocol.io/" target="_blank" rel="noopener"
+              >Model Context Protocol</a
+            >
+            and runs over <code>stdio</code>, so it plugs straight into Claude Desktop, VS Code,
+            Cursor, and other MCP hosts. Describe what you want in plain language — ReqStorm drives
+            real, autocannon-powered traffic and returns structured results.
+          </p>
+          <div class="panel">
+            <h3>What ships in the box</h3>
+            <ul style="margin: 0; padding-left: 18px; color: var(--muted); font-size: 14.5px">
+              <li>
+                Real latency percentiles from a live
+                <b style="color: var(--text)">hdr-histogram</b> — p50/p95/p99/p999
+              </li>
+              <li>Warm-up vs steady-state phases; thresholds evaluated on steady state only</li>
+              <li>
+                JSONPath extraction with <b style="color: var(--text)">13</b> matcher operators
+              </li>
+              <li>
+                Multi-step <code>{{var}}</code> chaining with request-to-request interpolation
+              </li>
+              <li>OpenAPI 3.x contract validation with breaking-change detection</li>
+              <li>Progress notifications on long-running jobs</li>
+            </ul>
+          </div>
+        </div>
+
+        <div>
+          <div class="eyebrow">Quick start</div>
+          <h2>Up and running in minutes</h2>
+          <p class="lead">
+            Add one entry to your MCP host config. No app to install on the client.
+          </p>
+          <div class="codeblock">
+            <pre><span class="tok-k">{
+  "mcpServers": {
+    "reqstorm": {
+      "command": "npx",
+      "args": ["-y", "reqstorm"]
+    }
+  }
+}</span></pre>
+          </div>
+          <div class="prompt">
+            <span class="who">You:</span>
+            <p>
+              Run a ReqStorm <code>benchmark</code> against
+              <code>https://api.example.com/health</code> with 10 connections for 10 seconds.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap" id="tools">
+      <div class="eyebrow">The toolbox</div>
+      <h2>14 tools. Three disciplines.</h2>
+      <p class="lead">
+        Every tool is a first-class MCP tool with a Zod-defined input schema and structured output.
+        Exact descriptions below mirror the project documentation.
+      </p>
+
+      <div class="group">
+        <h3>⚡ Performance <span class="pill">7 tools</span></h3>
+        <div class="tools-grid">
+          <div class="card">
+            <div class="name">benchmark</div>
+            <p class="desc">
+              Measure throughput and p50/p95/p99/p999 latency. Results include overall, warm-up, and
+              steady-state data.
+            </p>
+          </div>
+          <div class="card">
+            <div class="name">smoke</div>
+            <p class="desc">
+              Quickly check that an endpoint responds with the expected status and body.
+            </p>
+          </div>
+          <div class="card">
+            <div class="name">load-test</div>
+            <p class="desc">
+              Run sustained traffic and evaluate steady-state <code>maxP95</code>,
+              <code>maxP99</code>, and <code>maxErrorRate</code> thresholds.
+            </p>
+          </div>
+          <div class="card">
+            <div class="name">spike</div>
+            <p class="desc">
+              Run baseline, sudden surge, and recovery phases; measure recovery against baseline
+              latency.
+            </p>
+          </div>
+          <div class="card">
+            <div class="name">soak</div>
+            <p class="desc">
+              Run long-lived traffic in periodic chunks to find memory leaks, exhaustion, and
+              performance drift. Default duration is 30 minutes.
+            </p>
+          </div>
+          <div class="card">
+            <div class="name">stress-test</div>
+            <p class="desc">
+              Ramp concurrency step by step until latency or error-rate thresholds identify a
+              breaking point.
+            </p>
+          </div>
+          <div class="card">
+            <div class="name">compare</div>
+            <p class="desc">
+              Compare two endpoints or configurations side by side, optionally repeating each target
+              up to five times.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="group">
+        <h3>🔧 Functional &amp; contract <span class="pill">5 tools</span></h3>
+        <div class="tools-grid">
+          <div class="card">
+            <div class="name">validate</div>
+            <p class="desc">
+              Send one request and assert on JSONPath values, types, comparisons, regexes, array
+              properties, and response-time thresholds.
+            </p>
+          </div>
+          <div class="card">
+            <div class="name">chain</div>
+            <p class="desc">
+              Execute up to 20 ordered requests, extract values from responses, interpolate them
+              into later requests, and assert each step.
+            </p>
+          </div>
+          <div class="card">
+            <div class="name">contract-check</div>
+            <p class="desc">
+              Check a running API against an OpenAPI 3.x JSON/YAML document, including status codes,
+              schemas, content types, and required fields.
+            </p>
+          </div>
+          <div class="card">
+            <div class="name">fuzz</div>
+            <p class="desc">
+              Mutate request bodies with boundary, type-swap, injection, overflow, missing-field,
+              Unicode, format, and null-field strategies.
+            </p>
+          </div>
+          <div class="card">
+            <div class="name">regression</div>
+            <p class="desc">
+              Compare steady-state performance with a saved <code>.reqstorm/</code> baseline and
+              optionally save the current run as the new baseline.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="group">
+        <h3>🛡️ Security &amp; profiling <span class="pill">2 tools</span></h3>
+        <div class="tools-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr))">
+          <div class="card">
+            <div class="name">security-scan</div>
+            <p class="desc">
+              Run selected checks for authentication bypass, IDOR, security headers, data exposure,
+              rate limiting, method override, content-type mismatch, and path traversal.
+            </p>
+          </div>
+          <div class="card">
+            <div class="name">profile</div>
+            <p class="desc">
+              Inspect latency distribution, status-code counts, throughput stability, and
+              error/timeout breakdowns.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap" id="features">
+      <div class="eyebrow">Capabilities</div>
+      <h2>Built for real API work</h2>
+      <p class="lead">
+        Under the hood it wraps the autocannon load engine, hdr-histogram latency recording, and
+        swagger-parser — so numbers come from real measurement, not guesswork.
+      </p>
+      <div class="feat-grid">
+        <div class="feat">
+          <div class="ic">🎯</div>
+          <h4>Pass/fail thresholds</h4>
+          <p>
+            Load tests and regressions evaluate <code>p95</code>, <code>p99</code>, and error-rate
+            limits against steady-state metrics and return a clear verdict.
+          </p>
+        </div>
+        <div class="feat">
+          <div class="ic">🚀</div>
+          <h4>Warm-up aware</h4>
+          <p>
+            Benchmark runs split into warm-up and steady-state phases. Warm-up results are reported,
+            not discarded — thresholds only judge steady state.
+          </p>
+        </div>
+        <div class="feat">
+          <div class="ic">🔗</div>
+          <h4>Workflow chaining</h4>
+          <p>
+            <code>chain</code> runs up to 20 ordered requests, pulling values out of responses with
+            JSONPath and interpolating them via <code>{{var}}</code>.
+          </p>
+        </div>
+        <div class="feat">
+          <div class="ic">🧮</div>
+          <h4>13 matcher operators</h4>
+          <p>
+            <code>equals</code>, <code>notEquals</code>, <code>contains</code>,
+            <code>matches</code>, <code>gt</code>/<code>lt</code>/<code>gte</code>/<code>lte</code>,
+            <code>exists</code>, <code>notExists</code>, <code>isType</code>, <code>isArray</code>,
+            <code>hasLength</code>.
+          </p>
+        </div>
+        <div class="feat">
+          <div class="ic">📜</div>
+          <h4>OpenAPI contract checks</h4>
+          <p>
+            <code>contract-check</code> validates live endpoints against OpenAPI 3.x — status codes,
+            response schemas, content types — and surfaces breaking changes.
+          </p>
+        </div>
+        <div class="feat">
+          <div class="ic">🎲</div>
+          <h4>Fuzzing strategies</h4>
+          <p>
+            Boundary, type-swap, injection, overflow, missing-field, Unicode, format, and null-field
+            mutations with <code>quick</code>/<code>normal</code>/<code>thorough</code> depth.
+          </p>
+        </div>
+        <div class="feat">
+          <div class="ic">🛡️</div>
+          <h4>Security scanning</h4>
+          <p>
+            Auth-bypass, IDOR, security headers, data exposure, rate limiting, method override,
+            content-type mismatch, and path-traversal checks.
+          </p>
+        </div>
+        <div class="feat">
+          <div class="ic">📈</div>
+          <h4>Regression baselines</h4>
+          <p>
+            Save runs with <code>saveAs</code> into <code>.reqstorm/</code> and diff later runs
+            against them in CI or local workspaces.
+          </p>
+        </div>
+        <div class="feat">
+          <div class="ic">🩺</div>
+          <h4>Soak analytics</h4>
+          <p>
+            <code>soak</code> samples real <code>process.memoryUsage()</code> heap/RSS per snapshot
+            and derives a memory trend from actual growth.
+          </p>
+        </div>
+        <div class="feat">
+          <div class="ic">⏱️</div>
+          <h4>Progress reporting</h4>
+          <p>
+            Long-running tools emit MCP progress notifications as work proceeds, so clients can
+            render live status.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap examples" id="examples">
+      <div class="eyebrow">Example output</div>
+      <h2>Real output, structured and legible</h2>
+      <p class="lead">
+        Results come back as formatted text blocks that mirror exactly what the server produces,
+        plus machine-readable structured content for client tooling.
+      </p>
+
+      <div class="grid2">
+        <div>
+          <div class="term">
+            <div class="bar">
+              <span class="dot d1"></span>
+              <span class="dot d2"></span>
+              <span class="dot d3"></span>
+              <div class="tabs">
+                <span class="tab active" style="cursor: default">validate</span>
+              </div>
+            </div>
+            <pre><span class="dim">══════════════════════════════════════════════════</span>
+  <span class="b">Validate: GET https://api.example.com/users/1</span>
+<span class="dim">══════════════════════════════════════════════════</span>
+
+<span class="dim">Status:</span>        200
+<span class="dim">Response:</span>      182.4ms (TTFB 96.1ms)
+<span class="dim">Attempts:</span>      1
+
+  Assertions (3/3 passed):
+    <span class="ok">✓</span> <span class="hi">$.name</span>  → equals Alice (got Alice)
+    <span class="ok">✓</span> <span class="hi">$.age</span>   → gte 18 (got 29)
+    <span class="ok">✓</span> <span class="hi">$.email</span> → matches ^[^@]+@[^@]+$ (got alice@example.com)
+
+  Result:        <span class="ok">PASS</span></pre>
+          </div>
+        </div>
+
+        <div>
+          <div class="term">
+            <div class="bar">
+              <span class="dot d1"></span>
+              <span class="dot d2"></span>
+              <span class="dot d3"></span>
+              <div class="tabs">
+                <span class="tab active" style="cursor: default">security-scan</span>
+              </div>
+            </div>
+            <pre><span class="dim">══════════════════════════════════════════════════</span>
+  <span class="b">Security Scan: GET https://api.example.com/users/123</span>
+<span class="dim">══════════════════════════════════════════════════</span>
+
+  Checks Performed: 5
+
+  <span class="ok">✓</span> <span class="hi">auth-bypass</span>      — Returns 401 without auth — auth properly enforced
+  <span class="ok">✓</span> <span class="hi">security-headers</span> — X-Content-Type-Options: nosniff present
+  <span class="ok">✓</span> <span class="hi">data-exposure</span>    — No PII fields leaked in baseline response
+  <span class="warn">⚠</span> <span class="hi">idor</span>             — Adjacent resource id returned data (verify authorization)
+  <span class="ok">✓</span> <span class="hi">path-traversal</span>  — Path traversal blocked (400 on ../)
+
+  Findings: 1 warnings, 0 critical, 4 passed
+  Result:   <span class="warn">WARN</span></pre>
+          </div>
+        </div>
+
+        <div>
+          <div class="term">
+            <div class="bar">
+              <span class="dot d1"></span>
+              <span class="dot d2"></span>
+              <span class="dot d3"></span>
+              <div class="tabs"><span class="tab active" style="cursor: default">chain</span></div>
+            </div>
+            <pre><span class="dim">══════════════════════════════════════════════════</span>
+  <span class="b">Chain: 3 steps</span>
+<span class="dim">══════════════════════════════════════════════════</span>
+
+  [1] <span class="hi">login</span>                <span class="ok">✓</span> PASS  214ms
+      POST /auth/login → 200
+      Extracted: { token }
+  [2] <span class="hi">create-user</span>          <span class="ok">✓</span> PASS  182ms
+      POST /users → 201
+      Extracted: { id }
+  [3] <span class="hi">verify</span>               <span class="ok">✓</span> PASS  96ms
+      GET /users/27 → 200
+      <span class="ok">✓</span> $.name → equals Test User (got Test User)
+
+  Result: <span class="ok">PASS</span> (3/3 steps)
+  Final variables: { token, id }</pre>
+          </div>
+        </div>
+
+        <div>
+          <div class="term">
+            <div class="bar">
+              <span class="dot d1"></span>
+              <span class="dot d2"></span>
+              <span class="dot d3"></span>
+              <div class="tabs">
+                <span class="tab active" style="cursor: default">load-test</span>
+              </div>
+            </div>
+            <pre><span class="dim">══════════════════════════════════════════════════</span>
+  <span class="b">Load Test: GET https://api.example.com/auth</span>
+<span class="dim">══════════════════════════════════════════════════</span>
+
+<span class="dim">Duration:</span>       60s
+<span class="dim">Connections:</span>    100
+<span class="dim">Total Requests:</span>  63,204
+
+  Steady-state (55s):
+  p50: 21.9ms | p95: 47.5ms | p99: 88.9ms
+  Throughput:  2,148 req/s | Errors: 0 (0.00%)
+
+  Thresholds:
+    maxP95: 47.50 (limit: 200) → <span class="ok">PASS</span>
+    maxP99: 88.90 (limit: 500) → <span class="ok">PASS</span>
+    maxErrorRate: 0.00 (limit: 1) → <span class="ok">PASS</span>
+
+  Verdict:       <span class="ok">PASS</span></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap" id="quickstart">
+      <div class="eyebrow">Quick start</div>
+      <h2>Wire it into any MCP host</h2>
+      <p class="lead">
+        Clients such as Claude Desktop, VS Code, and Cursor pick the server up from this one config
+        block.
+      </p>
+      <div class="codeblock" style="max-width: 720px">
+        <pre><span class="tok-k">{</span>
+  <span class="tok-k">"mcpServers"</span>: <span class="tok-k">{</span>
+    <span class="tok-s">"reqstorm"</span>: <span class="tok-k">{</span>
+      <span class="tok-s">"command"</span>: <span class="tok-s">"npx"</span>,
+      <span class="tok-s">"args"</span>: <span class="tok-k">[</span><span class="tok-s">"-y"</span>, <span class="tok-s">"reqstorm"</span><span class="tok-k">]</span>
+    <span class="tok-k">}</span>
+  <span class="tok-k">}</span>
+<span class="tok-k">}</span></pre>
+      </div>
+    </section>
+
+    <section class="wrap" id="install">
+      <div class="eyebrow">Installation</div>
+      <h2>Two ways to run it</h2>
+      <div class="install-steps">
+        <div class="step">
+          <span class="n">01</span>
+          <h4>Via npx (no install)</h4>
+          <p>
+            The first run downloads the package from npm. This is what the MCP host config uses.
+          </p>
+          <div class="codeblock">
+            <pre><span class="tok-v">$</span> npx -y reqstorm</pre>
+          </div>
+        </div>
+        <div class="step">
+          <span class="n">02</span>
+          <h4>Global install</h4>
+          <p>Available as a global binary for any client, or for scripting and CI glue.</p>
+          <div class="codeblock">
+            <pre><span class="tok-v">$</span> npm install --global reqstorm</pre>
+          </div>
+        </div>
+        <div class="step">
+          <span class="n">03</span>
+          <h4>Requirements</h4>
+          <p>
+            Runs over stdio, bundled from dist/. Requires
+            <b style="color: var(--text)">Node.js 18+</b>.
+          </p>
+          <div class="codeblock">
+            <pre><span class="tok-v">$</span> node -v
+<span class="tok-s">v20.12.0</span>  <span class="tok-c"># 18 or newer ✓</span></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="wrap">
+        <div class="foot">
+          <a class="brand" href="#top">
+            <img src="reqstorm-icon.svg" alt="ReqStorm logo" />
+            ReqStorm
+          </a>
+          <div class="links">
+            <a href="https://www.npmjs.com/package/reqstorm" target="_blank" rel="noopener">npm</a>
+            <a href="https://github.com/looph0le/ReqStorm" target="_blank" rel="noopener">GitHub</a>
+            <a
+              href="https://mcpservers.org/servers/looph0le/reqstorm"
+              target="_blank"
+              rel="noopener"
+              >mcpservers.org</a
+            >
+            <a href="https://modelcontextprotocol.io/" target="_blank" rel="noopener">MCP</a>
+          </div>
+        </div>
+        <p class="legal">
+          ReqStorm v0.2.0 · MIT licensed · An API testing platform running as a Model Context
+          Protocol server.
+        </p>
+      </div>
+    </footer>
+
+    <script>
+      (function () {
+        var tabs = document.querySelectorAll('.term .tab[data-tab]');
+        tabs.forEach(function (tab) {
+          tab.addEventListener('click', function () {
+            var term = tab.closest('.term');
+            term.querySelectorAll('.tab').forEach(function (t) {
+              t.classList.remove('active');
+            });
+            tab.classList.add('active');
+            term.querySelectorAll('.pane').forEach(function (p) {
+              p.hidden = p.id !== 'tab-' + tab.dataset.tab;
+            });
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>

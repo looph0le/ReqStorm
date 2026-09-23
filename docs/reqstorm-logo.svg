@@ -1,0 +1,148 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 520 160"
+  role="img"
+  aria-labelledby="title desc"
+>
+  <title id="title">ReqStorm</title>
+  <desc id="desc">
+    ReqStorm logo — a bold electric lightning bolt on a dark slate tile, framed by request braces
+    like a terminal prompt.
+  </desc>
+
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#18223f" />
+      <stop offset="1" stop-color="#080e1c" />
+    </linearGradient>
+    <linearGradient id="bolt" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7df3ff" />
+      <stop offset="0.45" stop-color="#22d3ee" />
+      <stop offset="1" stop-color="#2563eb" />
+    </linearGradient>
+    <linearGradient id="word" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#22d3ee" />
+      <stop offset="1" stop-color="#60a5fa" />
+    </linearGradient>
+    <linearGradient id="ul" gradientUnits="userSpaceOnUse" x1="250" y1="105" x2="470" y2="105">
+      <stop offset="0" stop-color="#22d3ee" />
+      <stop offset="0.45" stop-color="#22d3ee" />
+      <stop offset="1" stop-color="#22d3ee" stop-opacity="0" />
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4.5" result="blur" />
+      <feColorMatrix
+        in="blur"
+        type="matrix"
+        values="0 0 0 0 0.13  0 0 0 0 0.83  0 0 0 0 0.95  0 0 0 0.5 0"
+        result="c"
+      />
+      <feMerge>
+        <feMergeNode in="c" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- left brace (prompt frame) -->
+  <path
+    d="M 34 46 C 30 46 30 50 30 54 C 30 61 30 66 26 70 C 20 76 16 77.5 16 80 C 16 82.5 20 84 26 90 C 30 94 30 99 30 106 C 30 110 30 114 34 114"
+    fill="none"
+    stroke="#64748b"
+    stroke-width="6.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- tile -->
+  <rect
+    x="48"
+    y="8"
+    width="144"
+    height="144"
+    rx="30"
+    fill="url(#tile)"
+    stroke="#2b3c60"
+    stroke-width="1.5"
+  />
+  <rect
+    x="51"
+    y="11"
+    width="138"
+    height="138"
+    rx="27"
+    fill="none"
+    stroke="#ffffff"
+    stroke-opacity="0.06"
+    stroke-width="1"
+  />
+
+  <!-- right brace (prompt frame) -->
+  <path
+    d="M 206 46 C 210 46 210 50 210 54 C 210 61 210 66 214 70 C 220 76 224 77.5 224 80 C 224 82.5 220 84 214 90 C 210 94 210 99 210 106 C 210 110 210 114 206 114"
+    fill="none"
+    stroke="#64748b"
+    stroke-width="6.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- glow behind bolt -->
+  <path
+    d="M 135.9 18.4 L 80.9 83.4 L 108.4 83.4 L 90.9 143.4 L 163.4 75.9 L 140.9 75.9 Z"
+    fill="#38bdf8"
+    filter="url(#glow)"
+  />
+
+  <!-- bold lightning bolt -->
+  <path
+    d="M 135.9 18.4 L 80.9 83.4 L 108.4 83.4 L 90.9 143.4 L 163.4 75.9 L 140.9 75.9 Z"
+    fill="url(#bolt)"
+    stroke="#0f172a"
+    stroke-width="3"
+    stroke-linejoin="round"
+  />
+
+  <!-- electric sparks -->
+  <g stroke="#67e8f9" stroke-width="3.5" stroke-linecap="round" opacity="0.9">
+    <path d="M 67 42 H 81" />
+    <path d="M 74 35 V 49" />
+  </g>
+  <g stroke="#67e8f9" stroke-width="3.5" stroke-linecap="round" opacity="0.6">
+    <path d="M 151 116 H 165" />
+    <path d="M 158 109 V 123" />
+  </g>
+
+  <!-- wordmark -->
+  <text
+    x="248"
+    y="92"
+    font-family="'Segoe UI', Inter, system-ui, -apple-system, sans-serif"
+    font-size="54"
+    font-weight="800"
+    letter-spacing="-1"
+  >
+    <tspan fill="#e7eef9">Req</tspan>
+    <tspan fill="url(#word)">Storm</tspan>
+  </text>
+  <line
+    x1="250"
+    y1="105"
+    x2="470"
+    y2="105"
+    stroke="url(#ul)"
+    stroke-width="3.5"
+    stroke-linecap="round"
+  />
+  <text
+    x="246"
+    y="127"
+    font-family="'Segoe UI', Inter, system-ui, -apple-system, sans-serif"
+    font-size="13.5"
+    font-weight="700"
+    letter-spacing="2"
+    fill="#5f7196"
+  >
+    API TESTING · MCP SERVER
+  </text>
+</svg>
